@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 
 setup(
-    name='qx-user',
+    name='qx-base',
     version='1.0.0',
     # license='',
     author='Shawn',
