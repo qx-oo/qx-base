@@ -1,0 +1,9 @@
+.*
+!.gitignore
+*.log
+*.pot
+*.pyc
+venv/
+logs/
+db.sqlite3
+__pycache__
