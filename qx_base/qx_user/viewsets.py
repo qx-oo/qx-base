@@ -10,6 +10,7 @@ from ..qx_rest.response import ApiResponse
 from .serializers import (
     SigninSerializer,
     SignupSerializer,
+    SendCodeSerializer,
     # UserInfoSerializer,
     # UpdateUserSerializer,
 )
@@ -62,6 +63,8 @@ class UserViewSet(viewsets.GenericViewSet,
             return SigninSerializer
         elif self.action == 'signup':
             return SignupSerializer
+        elif self.action == 'send_code':
+            return SendCodeSerializer
         # elif self.action == 'info':
         #     return UserInfoSerializer
         # elif self.action == 'update_info':
@@ -74,6 +77,10 @@ class UserViewSet(viewsets.GenericViewSet,
 
     @decorators.action(methods=['post'], url_path='signin', detail=False)
     def signin(self, request, *args, **kwargs):
+        return ApiResponse(data=self._create(request, *args, **kwargs))
+
+    @decorators.action(methods=['post'], url_path='send-code', detail=False)
+    def send_code(self, request, *args, **kwargs):
         return ApiResponse(data=self._create(request, *args, **kwargs))
 
     # def get_queryset(self):

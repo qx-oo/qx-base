@@ -8,6 +8,19 @@ from ..qx_rest.exceptions import SerializerFieldError
 User = get_user_model()
 
 
+class SendCodeSerializer(serializers.Serializer):
+    code = serializers.CharField(
+        label="验证码", max_length=10, required=False, write_only=True)
+    type = serializers.ChoiceField([(
+        ("mobile", "手机"),
+        ("email", "邮箱"),
+    )], label="类型")
+
+    def create(self, validated_data):
+        # TODO: send mobile code msg
+        pass
+
+
 class SignupSerializer(serializers.Serializer):
 
     mobile = serializers.CharField(
