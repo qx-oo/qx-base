@@ -1,7 +1,7 @@
 import time
 from django.apps import apps
 from django.utils import timezone
-from ..core.storage import RedisClient
+from ..qx_core.storage import RedisClient
 
 
 class AccessTimeMixin():

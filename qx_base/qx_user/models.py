@@ -6,7 +6,7 @@ from django.contrib.auth.models import (
     BaseUserManager,
     PermissionsMixin,
 )
-from ..core.models import AbstractBaseModel
+from ..qx_core.models import AbstractBaseModel
 from .auth import UserJWT
 
 

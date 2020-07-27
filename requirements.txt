@@ -1,0 +1,1 @@
+-e git://github.com/qx-oo/qx-base.git@1.0.0#egg=qx-base
