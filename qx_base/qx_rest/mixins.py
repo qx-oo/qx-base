@@ -31,6 +31,14 @@ class CreateModelMixin(mixins.CreateModelMixin):
         return ApiResponse(data=serializer.data)
 
 
+class PostModelMixin():
+    def _create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return serializer.data
+
+
 class ListModelMixin(mixins.ListModelMixin,
                      metaclass=RestCacheMeta):
     """
