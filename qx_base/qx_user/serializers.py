@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from django.db.models import Q
 from django.contrib.auth import authenticate
 from ..qx_rest.exceptions import SerializerFieldError
+from ..settings import base_settings
 
 
 User = get_user_model()
@@ -11,14 +12,25 @@ User = get_user_model()
 class SendCodeSerializer(serializers.Serializer):
     code = serializers.CharField(
         label="验证码", max_length=10, required=False, write_only=True)
-    type = serializers.ChoiceField([(
+    send_type = serializers.ChoiceField([(
         ("mobile", "手机"),
         ("email", "邮箱"),
+    )], label="发送类型")
+    type = serializers.ChoiceField([(
+        ("default", "登录后默认发送"),
+        ("signup", "注册"),
+        ("changepwd", "修改密码"),
     )], label="类型")
 
     def create(self, validated_data):
         # TODO: send mobile code msg
-        pass
+        if validated_data['send_type'] == 'mobile':
+            send_cls = base_settings.SEND_MOBILE_MSG_CLASS
+        elif validated_data['send_type'] == 'email':
+            send_cls = base_settings.SEND_EMAIL_MSG_CLASS
+        else:
+            raise SerializerFieldError(
+                '类型错误', field='send_type')
 
 
 class SignupSerializer(serializers.Serializer):

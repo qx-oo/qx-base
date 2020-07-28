@@ -1,5 +1,5 @@
 # qx-base
-my django basic module
+my django project basic module
 
 ### Usage:
 
