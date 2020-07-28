@@ -1,7 +1,8 @@
 import time
+import random
 from django.apps import apps
 from django.utils import timezone
-from ..qx_core.storage import RedisClient
+from ..qx_core.storage import RedisClient, ProxyCache
 
 
 class AccessTimeMixin():
@@ -29,7 +30,7 @@ class UserLastAccessTime(AccessTimeMixin):
     """
     total_page = 500
 
-    CACHE_KEY = "user:{}:{}:lastaccesstime"
+    CACHE_KEY = "qx_user:{}:{}:lastaccesstime"
 
     def format_key(self, page):
         key, ts = self.CACHE_KEY, 60 * 60 * 24
@@ -50,3 +51,36 @@ class UserLastAccessTime(AccessTimeMixin):
                 **{
                     filter_field: object_id}
             ).update(last_updated=last_updated)
+
+
+class CodeMsg():
+    """
+    发送验证码
+    """
+
+    def __init__(self, user_id=None, email=None, mobile=None,
+                 expire_time=60 * 5):
+        if user_id:
+            self.key = 'qx_user:codemsg:uid:{}'.format(user_id)
+        elif email:
+            self.key = 'qx_user:codemsg:email:{}'.format(email)
+        elif mobile:
+            self.key = 'qx_user:codemsg:mobile:{}'.format(mobile)
+        else:
+            raise ValueError('user_id, email or mobile is null')
+        self.cache = ProxyCache(self.key, expire_time)
+
+    def get_code(self) -> (bool, str):
+        """
+        return: 是否缓存, code
+        """
+        code = self.cache.get()
+        if code:
+            return True, code
+        code = random.sample(list(range(10)), 6)
+        code = ''.join([str(i) for i in code])
+        self.cache.set(code)
+        return False, code
+
+    def query_code(self):
+        return self.cache.get()

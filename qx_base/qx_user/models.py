@@ -33,9 +33,9 @@ class UserManager(BaseUserManager):
         user.save()
         return user
 
-    def create_user(self, mobile: str, password: str = None,
+    def create_user(self, mobile: str, email: str, password: str = None,
                     **extra_fields) -> "User":
-        return self._create_user(mobile, None, password, False, False,
+        return self._create_user(mobile, email, password, False, False,
                                  **extra_fields)
 
     def create_superuser(self, account: str, password: str,
