@@ -1,5 +1,8 @@
 import logging
-from celery.task import Task
+try:
+    from celery.task import Task
+except ImportError:
+    Task = object
 from .tools import UserLastAccessTime
 
 logger = logging.getLogger(__name__)

@@ -49,9 +49,9 @@ class SendCodeSerializer(serializers.Serializer):
         if is_send:
             raise serializers.ValidationError('5分钟后才能再次发送')
         if email:
-            send_cls().send(email, code)
+            send_cls().send_msg(email, code)
         elif mobile:
-            send_cls().send(mobile, code)
+            send_cls().send_msg(mobile, code)
         return {}
 
 
@@ -164,14 +164,12 @@ class UpdateEmailSerializer(serializers.ModelSerializer):
         model = User
         fields = ('email', 'code',)
 
-# class UserInfoSerializer(serializers.ModelSerializer):
 
-#     nick_name = serializers.CharField(
-#         label='用户昵称', source="userinfo.nick_name", max_length=25)
+class UserInfoSerializer(serializers.ModelSerializer):
 
-#     class Meta:
-#         model = User
-#         fields = ('mobile', 'email', 'nick_name')
+    class Meta:
+        model = User
+        fields = ('id', 'mobile', 'email',)
 
 
 # class UpdateUserSerializer(serializers.Serializer):

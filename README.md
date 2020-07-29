@@ -17,6 +17,8 @@ settings.py:
         ...
     ]
 
+    AUTH_USER_MODEL = "qx_user.User"
+
     JWT_TOKEN_KEYWORD = "Token"
 
     # RestFramework
@@ -46,6 +48,12 @@ settings.py:
     # signature public key and private key
     SIGNATURE_PUBLIC_KEY = """xxxxx"""
     SIGNATURE_PRIVATE_KEY = """xxxxx"""
+
+    QX_BASE_SETTINGS = {
+        'SEND_MOBILE_MSG_CLASS': "tests.msg.TestMsg",
+        'SEND_EMAIL_MSG_CLASS': "tests.msg.TestMsg",
+        'USERINFO_SERIALIZER_CLASS': "qx_base.qx_user.serializers.UserInfoSerializer",  # noqa
+    }
 
 
 ### Mac OS:

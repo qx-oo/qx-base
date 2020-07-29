@@ -125,6 +125,8 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+AUTH_USER_MODEL = "qx_user.User"
+
 # qx_base
 JWT_AUTH = {
     'JWT_REFRESH_EXPIRATION_DELTA': datetime.timedelta(days=7),
@@ -185,3 +187,10 @@ tkfpy0z3cxdkl/XMnhXIkRegxFx0XenovARUVwSttRxslse98v7tY7CXQd/5mD8B
 BtNVNM4sFNGlagyYugECQQCAEKAVJw/1pwrS5B+F9wlA9Ez7fI0uzFOcrc4RauXA
 ElBD6PTOifsl8TBQ2cQhPC//+/oP9wJlbXO0+G4VPSuM
 -----END RSA PRIVATE KEY-----"""
+
+
+QX_BASE_SETTINGS = {
+    'SEND_MOBILE_MSG_CLASS': "tests.msg.TestMsg",
+    'SEND_EMAIL_MSG_CLASS': "tests.msg.TestMsg",
+    'USERINFO_SERIALIZER_CLASS': "qx_base.qx_user.serializers.UserInfoSerializer",  # noqa
+}
