@@ -3,9 +3,13 @@ from rest_framework import viewsets, decorators
 from rest_framework.permissions import (
     AllowAny, IsAuthenticated, BasePermission,
 )
+from ..settings import base_settings
+from ..qx_core.storage import ProxyCache
 from ..qx_rest.mixins import (
     PostModelMixin,
     PutModelMixin,
+    GetOneModelMixin,
+    RestCacheNameMixin,
 )
 from ..qx_rest.response import ApiResponse
 from .serializers import (
@@ -31,7 +35,9 @@ class UserPermission(BasePermission):
 
 class UserViewSet(viewsets.GenericViewSet,
                   PostModelMixin,
-                  PutModelMixin,):
+                  PutModelMixin,
+                  GetOneModelMixin,
+                  RestCacheNameMixin,):
     '''
     登录注册
     ---
@@ -59,6 +65,11 @@ class UserViewSet(viewsets.GenericViewSet,
         更新邮箱
 
         更新邮箱
+
+    retrieve_info:
+        获取用户信息
+
+        获取用户信息
     '''
     permission_classes = (
         UserPermission,
@@ -76,6 +87,8 @@ class UserViewSet(viewsets.GenericViewSet,
             return UpdateMobileSerializer
         elif self.action == 'update_email':
             return UpdateEmailSerializer
+        elif self.action == 'retrieve_info':
+            return base_settings.USERINFO_SERIALIZER_CLASS
         return {}
 
     @decorators.action(methods=['post'], url_path='signup', detail=False)
@@ -101,6 +114,18 @@ class UserViewSet(viewsets.GenericViewSet,
         instance = request.user
         return ApiResponse(data=self._update(
             request, instance, *args, **kwargs))
+
+    @decorators.action(methods=['get'], url_path='info', detail=False)
+    def retrieve_info(self, request, *args, **kwargs):
+        instance = request.user
+        key = self.get_cache_name([instance.id])
+        proxy = ProxyCache(key, 60 * 60 * 24 * 15)
+        if data := proxy.get():
+            return ApiResponse(data=data)
+        data = self._get_one(instance)
+        if data:
+            proxy.set(data)
+        return ApiResponse(data=data)
 
     # def get_queryset(self):
     #     if self.request.user.is_authenticated:

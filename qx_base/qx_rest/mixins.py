@@ -1,7 +1,7 @@
 from django.http import Http404
 from rest_framework import mixins
 from .response import ApiResponse
-from .caches import RestCacheMeta
+from .caches import RestCacheMeta, RestCacheKey
 
 
 class RetrieveModelMixin(mixins.RetrieveModelMixin,
@@ -18,46 +18,6 @@ class RetrieveModelMixin(mixins.RetrieveModelMixin,
     def retrieve(self, request, *args, **kwargs):
         data = self._retrieve(request, *args, **kwargs)
         return ApiResponse(data)
-
-
-class CreateModelMixin(mixins.CreateModelMixin):
-    """
-    Create a model instance.
-    """
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        return ApiResponse(data=serializer.data)
-
-
-class PostModelMixin():
-    def _create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return serializer.data
-
-
-class PutModelMixin(mixins.UpdateModelMixin):
-    """
-    Update a model instance.
-    """
-
-    def _update(self, request, instance=None, *args, **kwargs):
-        partial = True
-        if not instance:
-            raise Http404()
-        serializer = self.get_serializer(
-            instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-
-        if getattr(instance, '_prefetched_objects_cache', None):
-            instance._prefetched_objects_cache = {}
-
-        return ApiResponse(serializer.data)
 
 
 class ListModelMixin(mixins.ListModelMixin,
@@ -80,6 +40,18 @@ class ListModelMixin(mixins.ListModelMixin,
     def list(self, request, *args, **kwargs):
         data = self._list(request, *args, **kwargs)
         return ApiResponse(data)
+
+
+class CreateModelMixin(mixins.CreateModelMixin):
+    """
+    Create a model instance.
+    """
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return ApiResponse(data=serializer.data)
 
 
 class UpdateModelMixin(mixins.UpdateModelMixin):
@@ -110,6 +82,52 @@ class DestroyModelMixin(mixins.DestroyModelMixin):
         instance = self.get_object()
         self.perform_destroy(instance)
         return ApiResponse({})
+
+
+class GetOneModelMixin():
+
+    def _get_one(self, request, instance):
+        if not instance:
+            raise Http404()
+        serializer = self.get_serializer(instance)
+        return serializer.data
+
+
+class PostModelMixin():
+    def _create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return serializer.data
+
+
+class PutModelMixin():
+    """
+    Update a model instance.
+    """
+
+    def _update(self, request, instance=None, *args, **kwargs):
+        partial = True
+        if not instance:
+            raise Http404()
+        serializer = self.get_serializer(
+            instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        if getattr(instance, '_prefetched_objects_cache', None):
+            instance._prefetched_objects_cache = {}
+
+        return serializer.data
+
+
+class DeleteModelMixin():
+
+    def _destroy(self, request, instance=None, *args, **kwargs):
+        if not instance:
+            raise Http404()
+        self.perform_destroy(instance)
+        return {}
 
 
 class UserCreateModelMixin(CreateModelMixin):
@@ -160,3 +178,12 @@ class UserCreateListMixin(CreateModelMixin):
 
     def perform_create(self, serializer):
         serializer.save(user_id=self.request.user.id)
+
+
+class RestCacheNameMixin():
+
+    def get_cache_name(self, args=[]):
+        key = RestCacheKey._cache_keys(self)
+        for arg in args:
+            key += ':{}'.format(arg)
+        return key
