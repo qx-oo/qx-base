@@ -147,7 +147,6 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS':
         'qx_base.qx_rest.paginations.Pagination',  # qx_base
     'DEFAULT_FILTER_BACKENDS': (
-        'django_filters.rest_framework.DjangoFilterBackend',
         'rest_framework.filters.OrderingFilter',
         'rest_framework.filters.SearchFilter',
     ),

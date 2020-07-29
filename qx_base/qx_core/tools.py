@@ -61,3 +61,8 @@ def enforce_timezone(value):
     if timezone.is_aware(value):
         return value.astimezone(field_timezone)
     return timezone.make_aware(value, field_timezone)
+
+
+class DictInstance(object):
+    def __init__(self, **entries):
+        self.__dict__.update(entries)

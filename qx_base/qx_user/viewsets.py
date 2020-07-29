@@ -5,14 +5,15 @@ from rest_framework.permissions import (
 )
 from ..qx_rest.mixins import (
     PostModelMixin,
+    PutModelMixin,
 )
 from ..qx_rest.response import ApiResponse
 from .serializers import (
     SigninSerializer,
     SignupSerializer,
     SendCodeSerializer,
-    # UserInfoSerializer,
-    # UpdateUserSerializer,
+    UpdateMobileSerializer,
+    UpdateEmailSerializer,
 )
 
 # Create your views here.
@@ -29,7 +30,8 @@ class UserPermission(BasePermission):
 
 
 class UserViewSet(viewsets.GenericViewSet,
-                  PostModelMixin,):
+                  PostModelMixin,
+                  PutModelMixin,):
     '''
     登录注册
     ---
@@ -43,15 +45,20 @@ class UserViewSet(viewsets.GenericViewSet,
 
         登入
 
-    info:
-        用户信息
+    send_code:
+        发送验证码
 
-        用户信息
+        发送验证码
 
-    update_info:
-        更新用户信息
+    update_mobile:
+        更新手机号
 
-        更新用户信息
+        更新手机号
+
+    update_email:
+        更新邮箱
+
+        更新邮箱
     '''
     permission_classes = (
         UserPermission,
@@ -65,10 +72,10 @@ class UserViewSet(viewsets.GenericViewSet,
             return SignupSerializer
         elif self.action == 'send_code':
             return SendCodeSerializer
-        # elif self.action == 'info':
-        #     return UserInfoSerializer
-        # elif self.action == 'update_info':
-        #     return UpdateUserSerializer
+        elif self.action == 'update_mobile':
+            return UpdateMobileSerializer
+        elif self.action == 'update_email':
+            return UpdateEmailSerializer
         return {}
 
     @decorators.action(methods=['post'], url_path='signup', detail=False)
@@ -82,6 +89,18 @@ class UserViewSet(viewsets.GenericViewSet,
     @decorators.action(methods=['post'], url_path='send-code', detail=False)
     def send_code(self, request, *args, **kwargs):
         return ApiResponse(data=self._create(request, *args, **kwargs))
+
+    @decorators.action(methods=['put'], url_path='update-mobile', detail=False)
+    def update_mobile(self, request, *args, **kwargs):
+        instance = request.user
+        return ApiResponse(data=self._update(
+            request, instance, *args, **kwargs))
+
+    @decorators.action(methods=['put'], url_path='update-email', detail=False)
+    def update_email(self, request, *args, **kwargs):
+        instance = request.user
+        return ApiResponse(data=self._update(
+            request, instance, *args, **kwargs))
 
     # def get_queryset(self):
     #     if self.request.user.is_authenticated:

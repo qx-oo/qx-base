@@ -11,37 +11,48 @@ User = get_user_model()
 
 
 class SendCodeSerializer(serializers.Serializer):
-    # code = serializers.CharField(
-    #     label="验证码", read_only=True)
-    send_type = serializers.ChoiceField([(
-        ("mobile", "手机"),
-        ("email", "邮箱"),
-    )], label="发送类型")
+    send_type = serializers.ChoiceField(
+        ['mobile', 'email'], label="发送类型")
     mobile = serializers.CharField(
         label="手机号", max_length=20, required=False)
     email = serializers.CharField(
-        label="邮箱", max_length=100, required=False)
-    type = serializers.ChoiceField([(
-        ("default", "登录后默认发送"),
-        ("signup", "注册"),
-        ("changepwd", "修改密码"),
-    )], label="类型")
+        label="邮箱", max_length=50, required=False)
+    type = serializers.ChoiceField(
+        ["default", "signup", "changepwd", ], label="类型")
 
     def create(self, validated_data):
-        # TODO: send mobile code msg
-        if validated_data['send_type'] == 'mobile':
+        send_type = validated_data['send_type']
+        if send_type == 'mobile':
             send_cls = base_settings.SEND_MOBILE_MSG_CLASS
-        elif validated_data['send_type'] == 'email':
+        elif send_type == 'email':
             send_cls = base_settings.SEND_EMAIL_MSG_CLASS
         else:
             raise SerializerFieldError(
                 '类型错误', field='send_type')
+        mobile, email, uid = None, None, None
         if validated_data['type'] == 'default':
-            code = CodeMsg()
+            if user := self.context['user'].user:
+                uid = user.id
+                mobile = user.mobile
+                email = user.email
+            else:
+                raise serializers.ValidationError('请登录后发送')
         elif validated_data['type'] == 'signup':
-            pass
+            mobile = validated_data.pop('mobile', None)
+            email = validated_data.pop('email', None)
         elif validated_data['type'] == 'changepwd':
-            pass
+            mobile = validated_data.pop('mobile', None)
+            email = validated_data.pop('email', None)
+        if not email or not mobile:
+            raise serializers.ValidationError('email or mobile error')
+        is_send, code = CodeMsg(uid, email, mobile).get_code()
+        if is_send:
+            raise serializers.ValidationError('5分钟后才能再次发送')
+        if email:
+            send_cls().send(email, code)
+        elif mobile:
+            send_cls().send(mobile, code)
+        return {}
 
 
 class SignupSerializer(serializers.Serializer):
@@ -49,7 +60,7 @@ class SignupSerializer(serializers.Serializer):
     mobile = serializers.CharField(
         label="手机号", max_length=20, required=False)
     email = serializers.CharField(
-        label="邮箱", max_length=100, required=False)
+        label="邮箱", max_length=50, required=False)
     code = serializers.CharField(
         label="验证码", max_length=10, required=False, write_only=True)
 
@@ -63,7 +74,7 @@ class SignupSerializer(serializers.Serializer):
 class SigninSerializer(serializers.Serializer):
 
     account = serializers.CharField(
-        label="账号", max_length=100,)
+        label="账号", max_length=50,)
     password = serializers.CharField(
         label="密码", max_length=50, required=False, write_only=True)
     code = serializers.CharField(
@@ -104,6 +115,54 @@ class SigninSerializer(serializers.Serializer):
     class Meta:
         model = User
 
+
+class UpdateMobileSerializer(serializers.ModelSerializer):
+
+    mobile = serializers.CharField(
+        label="手机号", max_length=20)
+    code = serializers.CharField(
+        label="验证码", max_length=10, required=False, write_only=True)
+
+    def update(self, instance, validated_data):
+        code = validated_data.pop('code', None)
+        mobile = validated_data['mobile']
+        _code = CodeMsg(None, None, mobile).get_code()
+        if code != _code:
+            raise SerializerFieldError(
+                '验证码错误', field='code')
+        if instance.mobile == instance.account:
+            validated_data['account'] = mobile
+
+        instance = super().update(instance, validated_data)
+        return instance
+
+    class Meta:
+        model = User
+        fields = ('mobile', 'code',)
+
+
+class UpdateEmailSerializer(serializers.ModelSerializer):
+
+    email = serializers.CharField(
+        label="邮箱", max_length=50)
+    code = serializers.CharField(
+        label="验证码", max_length=10, required=False, write_only=True)
+
+    def update(self, instance, validated_data):
+        code = validated_data.pop('code', None)
+        email = validated_data['email']
+        _code = CodeMsg(None, email, None).get_code()
+        if code != _code:
+            raise SerializerFieldError(
+                '验证码错误', field='code')
+        if instance.email == instance.account:
+            validated_data['account'] = email
+        instance = super().update(instance, validated_data)
+        return instance
+
+    class Meta:
+        model = User
+        fields = ('email', 'code',)
 
 # class UserInfoSerializer(serializers.ModelSerializer):
 

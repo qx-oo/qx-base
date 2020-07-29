@@ -1,7 +1,51 @@
 # qx-base
 my django project basic module
 
+### Install:
+
+    pip install -e git://github.com/qx-oo/qx-base.git@master#egg=qx-base
+
 ### Usage:
+
+settings.py:
+
+    INSTALLED_APPS = [
+        ...
+        'qx_base.qx_core',
+        'qx_base.qx_rest',
+        'qx_base.qx_user',
+        ...
+    ]
+
+    JWT_TOKEN_KEYWORD = "Token"
+
+    # RestFramework
+    REST_FRAMEWORK = {
+        ...
+        'DEFAULT_AUTHENTICATION_CLASSES': (
+            'qx_base.qx_user.auth.JwtAuthentication',
+            ...
+        ),
+        'DEFAULT_PAGINATION_CLASS':
+            'qx_base.qx_rest.paginations.Pagination',
+        'EXCEPTION_HANDLER': 'qx_base.qx_rest.handlers.rest_exception_handler',
+        ...
+    }
+
+    # Redis
+    REDIS_HOST = "127.0.0.1"
+    REDIS_PORT = 6379
+    REDIS_PASSWORD = ""
+    REDIS_URL = "redis://:{}@{}:{}".format(
+        REDIS_PASSWORD,
+        REDIS_HOST,
+        REDIS_PORT)
+
+    # ignore check sign url
+    IGNORE_CHECK_SIGN_PATH = ['/test/api/test']
+    # signature public key and private key
+    SIGNATURE_PUBLIC_KEY = """xxxxx"""
+    SIGNATURE_PRIVATE_KEY = """xxxxx"""
 
 
 ### Mac OS:

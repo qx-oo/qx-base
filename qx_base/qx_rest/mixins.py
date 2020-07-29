@@ -1,3 +1,4 @@
+from django.http import Http404
 from rest_framework import mixins
 from .response import ApiResponse
 from .caches import RestCacheMeta
@@ -37,6 +38,26 @@ class PostModelMixin():
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return serializer.data
+
+
+class PutModelMixin(mixins.UpdateModelMixin):
+    """
+    Update a model instance.
+    """
+
+    def _update(self, request, instance=None, *args, **kwargs):
+        partial = True
+        if not instance:
+            raise Http404()
+        serializer = self.get_serializer(
+            instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        if getattr(instance, '_prefetched_objects_cache', None):
+            instance._prefetched_objects_cache = {}
+
+        return ApiResponse(serializer.data)
 
 
 class ListModelMixin(mixins.ListModelMixin,

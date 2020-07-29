@@ -2,7 +2,7 @@ import time
 import random
 from django.apps import apps
 from django.utils import timezone
-from ..qx_core.storage import RedisClient, ProxyCache
+from ..qx_core.storage import RedisClient, RedisExpiredHash
 
 
 class AccessTimeMixin():
@@ -59,28 +59,27 @@ class CodeMsg():
     """
 
     def __init__(self, user_id=None, email=None, mobile=None,
-                 expire_time=60 * 5):
+                 expire_time=60 * 10):
         if user_id:
-            self.key = 'qx_user:codemsg:uid:{}'.format(user_id)
+            self.key = user_id
         elif email:
-            self.key = 'qx_user:codemsg:email:{}'.format(email)
+            self.key = email
         elif mobile:
-            self.key = 'qx_user:codemsg:mobile:{}'.format(mobile)
+            self.key = mobile
         else:
             raise ValueError('user_id, email or mobile is null')
-        self.cache = ProxyCache(self.key, expire_time)
+        self.cache = RedisExpiredHash('codemsg')
 
     def get_code(self) -> (bool, str):
         """
         return: 是否缓存, code
         """
-        code = self.cache.get()
-        if code:
+        if code := self.cache.hget(self.key):
             return True, code
         code = random.sample(list(range(10)), 6)
         code = ''.join([str(i) for i in code])
-        self.cache.set(code)
+        self.cache.hset(self.key, code)
         return False, code
 
     def query_code(self):
-        return self.cache.get()
+        return self.cache.hget(self.key)
