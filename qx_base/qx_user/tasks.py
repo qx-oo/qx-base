@@ -3,7 +3,7 @@ try:
     from celery.task import Task
 except ImportError:
     Task = object
-from .tools import UserLastAccessTime
+from ..settings import base_settings
 
 logger = logging.getLogger(__name__)
 
@@ -16,5 +16,5 @@ class UserAccessTimeTask(Task):
     def run(self):
         logger.info(
             'UserLastAccessTimeTask user save')
-        UserLastAccessTime().save_access_time_to_db()
+        base_settings.USERLASTACCESS_CLASS().save_access_time_to_db()
         return True
