@@ -70,7 +70,7 @@ class CodeMsg():
             raise ValueError('user_id, email or mobile is null')
         self.cache = RedisExpiredHash('codemsg{}'.format(_type))
 
-    def get_code(self) -> (bool, str):
+    def get_new_code(self) -> (bool, str):
         """
         return: 是否缓存, code
         """
@@ -80,6 +80,9 @@ class CodeMsg():
         code = ''.join([str(i) for i in code])
         self.cache.hset(self.key, code)
         return False, code
+
+    def get_code(self):
+        return self.cache.hget(self.key)
 
     def query_code(self):
         return self.cache.hget(self.key)

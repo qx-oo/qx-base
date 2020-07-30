@@ -51,7 +51,7 @@ class SendCodeSerializer(serializers.Serializer):
         if not email and not mobile:
             raise serializers.ValidationError('email or mobile error')
         c_ins = CodeMsg(uid, email, mobile, _type=_type)
-        is_send, code = c_ins.get_code()
+        is_send, code = c_ins.get_new_code()
         if is_send:
             raise serializers.ValidationError('5分钟后才能再次发送')
         try:
@@ -74,7 +74,27 @@ class SignupSerializer(serializers.Serializer):
         label="验证码", max_length=10, required=False, write_only=True)
 
     def create(self, validated_data):
-        pass
+        code = validated_data.pop('code', None)
+        mobile = validated_data.pop('mobile', None)
+        email = validated_data.pop('email', None)
+        if not email and not mobile:
+            serializers.ValidationError('email or mobile empty')
+        account = email or mobile
+        if User.objects.filter(
+                Q(mobile=account) | Q(email=account) | Q(account=account)
+        ).exists():
+            if email:
+                raise SerializerFieldError(
+                    '用户已存在', field='email')
+            else:
+                raise SerializerFieldError(
+                    '用户已存在', field='mobile')
+        _code = CodeMsg(
+            None, email, mobile, _type='signup').get_code()
+        if code != _code:
+            raise SerializerFieldError(
+                '验证码错误', field='code')
+        return User.objects.create_user(mobile, email)
 
     class Meta:
         model = User
@@ -122,7 +142,7 @@ class SigninSerializer(serializers.Serializer):
             else:
                 raise serializers.Serializer('发送类型错误')
             c_ins = CodeMsg(None, email, mobile, _type='signin')
-            is_send, _code = c_ins.get_code()
+            _code = c_ins.get_code()
 
             if _code != code:
                 raise SerializerFieldError(
@@ -146,7 +166,8 @@ class UpdateMobileSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         code = validated_data.pop('code', None)
         mobile = validated_data['mobile']
-        _code = CodeMsg(None, None, mobile).get_code()
+        _code = CodeMsg(
+            None, None, mobile, _type='default').get_code()
         if code != _code:
             raise SerializerFieldError(
                 '验证码错误', field='code')
@@ -171,7 +192,7 @@ class UpdateEmailSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         code = validated_data.pop('code', None)
         email = validated_data['email']
-        _code = CodeMsg(None, email, None).get_code()
+        _code = CodeMsg(None, email, None, _type='default').get_code()
         if code != _code:
             raise SerializerFieldError(
                 '验证码错误', field='code')
