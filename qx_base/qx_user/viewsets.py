@@ -28,7 +28,7 @@ User = get_user_model()
 
 class UserPermission(BasePermission):
     def has_permission(self, request, view):
-        if view.action in ['signin', 'signup', ]:
+        if view.action in ['signin', 'signup', 'send_code']:
             return AllowAny().has_permission(request, view)
         return IsAuthenticated().has_permission(request, view)
 
@@ -126,8 +126,3 @@ class UserViewSet(viewsets.GenericViewSet,
         if data:
             proxy.set(data)
         return ApiResponse(data=data)
-
-    # def get_queryset(self):
-    #     if self.request.user.is_authenticated:
-    #         return self.queryset.filter(user=self.request.user)
-    #     return self.queryset

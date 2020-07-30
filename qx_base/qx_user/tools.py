@@ -59,7 +59,7 @@ class CodeMsg():
     """
 
     def __init__(self, user_id=None, email=None, mobile=None,
-                 expire_time=60 * 10):
+                 _type='', expire_time=60 * 10):
         if user_id:
             self.key = user_id
         elif email:
@@ -68,7 +68,7 @@ class CodeMsg():
             self.key = mobile
         else:
             raise ValueError('user_id, email or mobile is null')
-        self.cache = RedisExpiredHash('codemsg')
+        self.cache = RedisExpiredHash('codemsg{}'.format(_type))
 
     def get_code(self) -> (bool, str):
         """
@@ -83,3 +83,6 @@ class CodeMsg():
 
     def query_code(self):
         return self.cache.hget(self.key)
+
+    def del_code(self):
+        return self.cache.hdel(self.key)

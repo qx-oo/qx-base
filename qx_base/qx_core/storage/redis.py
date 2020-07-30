@@ -1,6 +1,7 @@
 import time
 import redis
 import logging
+import json
 from django.conf import settings
 from ..tools import Singleton
 
@@ -74,20 +75,36 @@ class RedisExpiredHash():
         """
         设置值
         """
+        expire_tm = int(self.current) + self.expired
+        val = json.dumps({
+            'tm': expire_tm,
+            'val': value,
+        })
+        self.hdel(key)
         save_tm, timeout = self.get_save_tm()
         name = self.get_key_name(save_tm)
-        self.client.hset(name, key, value)
+        self.client.hset(name, key, val)
         self.client.expire(name, timeout)
 
-    def hget(self, key):
-        """
-        获取值
-        """
+    def _query_name(self):
         cur_tm = int(self.current / 1000)
         last_tm = cur_tm - 1
         next_tm = cur_tm + 1
         for tm in [last_tm, cur_tm, next_tm]:
             name = self.get_key_name(tm)
+            yield name
+
+    def hget(self, key):
+        """
+        获取值
+        """
+        for name in self._query_name():
             if data := self.client.hget(name, key):
-                return data
+                val = json.loads(data)
+                if val['tm'] > self.current:
+                    return val['val']
         return None
+
+    def hdel(self, key):
+        for name in self._query_name():
+            self.client.hdel(name, key)

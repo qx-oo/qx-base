@@ -1,8 +1,9 @@
-from rest_framework import serializers
+from rest_framework import serializers, exceptions
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 from django.contrib.auth import authenticate
 from ..qx_rest.exceptions import SerializerFieldError
+from ..qx_core.tools import DictInstance
 from ..settings import base_settings
 from .tools import CodeMsg
 
@@ -21,6 +22,9 @@ class SendCodeSerializer(serializers.Serializer):
         ["default", "signup", "changepwd", ], label="类型")
 
     def create(self, validated_data):
+        if validated_data['type'] in ['default', 'changepwd']:
+            if not self.context['request'].user.is_authenticated:
+                raise exceptions.AuthenticationFailed("认证失败")
         send_type = validated_data['send_type']
         if send_type == 'mobile':
             send_cls = base_settings.SEND_MOBILE_MSG_CLASS
@@ -31,7 +35,7 @@ class SendCodeSerializer(serializers.Serializer):
                 '类型错误', field='send_type')
         mobile, email, uid = None, None, None
         if validated_data['type'] == 'default':
-            if user := self.context['user'].user:
+            if user := self.context['request'].user:
                 uid = user.id
                 mobile = user.mobile
                 email = user.email
@@ -43,16 +47,20 @@ class SendCodeSerializer(serializers.Serializer):
         elif validated_data['type'] == 'changepwd':
             mobile = validated_data.pop('mobile', None)
             email = validated_data.pop('email', None)
-        if not email or not mobile:
+        if not email and not mobile:
             raise serializers.ValidationError('email or mobile error')
-        is_send, code = CodeMsg(uid, email, mobile).get_code()
+        c_ins = CodeMsg(uid, email, mobile)
+        is_send, code = c_ins.get_code()
         if is_send:
             raise serializers.ValidationError('5分钟后才能再次发送')
-        if email:
-            send_cls().send_msg(email, code)
-        elif mobile:
-            send_cls().send_msg(mobile, code)
-        return {}
+        try:
+            if email:
+                send_cls().send_msg(email, code)
+            elif mobile:
+                send_cls().send_msg(mobile, code)
+        except Exception:
+            c_ins.del_code()
+        return DictInstance(**validated_data)
 
 
 class SignupSerializer(serializers.Serializer):
