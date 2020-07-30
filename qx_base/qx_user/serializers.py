@@ -19,10 +19,11 @@ class SendCodeSerializer(serializers.Serializer):
     email = serializers.CharField(
         label="邮箱", max_length=50, required=False)
     type = serializers.ChoiceField(
-        ["default", "signup", "changepwd", ], label="类型")
+        ["default", "signup", "signin", "changepwd", ], label="类型")
 
     def create(self, validated_data):
-        if validated_data['type'] in ['default', 'changepwd']:
+        _type = validated_data['type']
+        if _type in ['default', 'changepwd']:
             if not self.context['request'].user.is_authenticated:
                 raise exceptions.AuthenticationFailed("认证失败")
         send_type = validated_data['send_type']
@@ -34,22 +35,22 @@ class SendCodeSerializer(serializers.Serializer):
             raise SerializerFieldError(
                 '类型错误', field='send_type')
         mobile, email, uid = None, None, None
-        if validated_data['type'] == 'default':
+        if _type == 'default':
             if user := self.context['request'].user:
                 uid = user.id
                 mobile = user.mobile
                 email = user.email
             else:
                 raise serializers.ValidationError('请登录后发送')
-        elif validated_data['type'] == 'signup':
+        elif _type in ['signup', 'signin']:
             mobile = validated_data.pop('mobile', None)
             email = validated_data.pop('email', None)
-        elif validated_data['type'] == 'changepwd':
+        elif _type == 'changepwd':
             mobile = validated_data.pop('mobile', None)
             email = validated_data.pop('email', None)
         if not email and not mobile:
             raise serializers.ValidationError('email or mobile error')
-        c_ins = CodeMsg(uid, email, mobile)
+        c_ins = CodeMsg(uid, email, mobile, _type=_type)
         is_send, code = c_ins.get_code()
         if is_send:
             raise serializers.ValidationError('5分钟后才能再次发送')
@@ -112,13 +113,24 @@ class SigninSerializer(serializers.Serializer):
             if not auth_user:
                 raise SerializerFieldError(
                     '密码错误', field='password')
-            return auth_user
         elif code:
-            raise SerializerFieldError(
-                '验证码错误', field='code')
+            mobile, email = None, None
+            if account == user.mobile:
+                mobile = account
+            elif account == user.email:
+                email = account
+            else:
+                raise serializers.Serializer('发送类型错误')
+            c_ins = CodeMsg(None, email, mobile, _type='signin')
+            is_send, _code = c_ins.get_code()
+
+            if _code != code:
+                raise SerializerFieldError(
+                    '验证码错误', field='code')
         else:
             raise SerializerFieldError(
                 '未知错误', field='password')
+        return user
 
     class Meta:
         model = User
