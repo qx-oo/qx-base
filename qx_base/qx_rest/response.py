@@ -11,17 +11,16 @@ class SignErrJsonResponse(JsonResponse):
             'code': 4002,
             'msg': ['signature is error']
         }
-        self._results = results
         super().__init__(data=results, status=400)
 
 
 class SecurityErrResponse(JsonResponse):
     def __init__(self):
-        data = {
+        results = {
             'code': 4006,
             'msg': ['Content is illegal']
         }
-        super().__init__(data=data, status=400)
+        super().__init__(data=results, status=400)
 
 
 class ApiNotFoundResponse(JsonResponse):
@@ -30,7 +29,6 @@ class ApiNotFoundResponse(JsonResponse):
             'code': 4004,
             'msg': ['Not Found']
         }
-        self._results = results
         super().__init__(data=results, status=404)
 
 
@@ -41,7 +39,6 @@ class ApiResponse(JsonResponse):
             "msg": ["success"],
             "data": data
         }
-        self._results = results
         super().__init__(data=results, status=200)
 
 
@@ -53,7 +50,6 @@ class ApiErrorResponse(JsonResponse):
             "code": code,
             "msg": msg
         }
-        self._results = results
         super().__init__(data=results, status=200)
 
 
@@ -68,7 +64,6 @@ class ApiDetailErrorResponse(JsonResponse):
                 "fields": fields,
             },
         }
-        self._results = results
         super().__init__(data=results, status=200)
 
 
@@ -80,7 +75,6 @@ class AuthenticationFailedResponse(JsonResponse):
             "code": 4001,
             "msg": msg,
         }
-        self._results = results
         super().__init__(data=results, status=401)
 
 
@@ -90,5 +84,4 @@ class Api500ErrorResponse(JsonResponse):
             "code": 5000,
             "msg": ["error request"]
         }
-        self._results = results
         super().__init__(data=results, status=500)

@@ -53,7 +53,7 @@ settings.py:
         'SEND_MOBILE_MSG_CLASS': "tests.msg.TestMsg",
         'SEND_EMAIL_MSG_CLASS': "tests.msg.TestMsg",
         'USERINFO_SERIALIZER_CLASS': "qx_base.qx_user.serializers.UserInfoSerializer",  # noqa
-        'USERLASTACCESS_CLASS': "qx_base.qx_user.tasks.UserLastAccessTime",
+        'USERLASTACCESS_CLASS': "qx_base.qx_user.tools.UserLastAccessTime",
     }
 
 

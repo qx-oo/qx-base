@@ -4,12 +4,11 @@ from setuptools import find_packages, setup
 setup(
     name='qx-base',
     version='1.0.0',
-    # license='',
     author='Shawn',
     author_email='q-x64@live.com',
-    url='https://github.com/qx-oo/qx-user/',
+    url='https://github.com/qx-oo/qx-base/',
     description='Django base apps.',
-    # long_description=open("README.md").read(),
+    long_description=open("README.md").read(),
     packages=find_packages(exclude=["tests", ]),
     install_requires=[
         'Django >= 3.0',
