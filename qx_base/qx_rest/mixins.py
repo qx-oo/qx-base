@@ -187,3 +187,11 @@ class RestCacheNameMixin():
         for arg in args:
             key += ':{}'.format(arg)
         return key
+
+
+class UserFilterMixin():
+
+    def get_queryset(self):
+        if self.request.user.is_authenticated:
+            return self.queryset.filter(user=self.request.user)
+        return self.queryset

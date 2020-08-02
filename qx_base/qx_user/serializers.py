@@ -9,6 +9,7 @@ from .tools import CodeMsg
 
 
 User = get_user_model()
+UserInfo = base_settings.USERINFO_MODEL_CLASS
 
 
 class SendCodeSerializer(serializers.Serializer):
@@ -211,5 +212,5 @@ class UpdateEmailSerializer(serializers.ModelSerializer):
 class UserInfoSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = User
-        fields = ('id', 'mobile', 'email',)
+        model = UserInfo
+        fields = ('id', 'name',)

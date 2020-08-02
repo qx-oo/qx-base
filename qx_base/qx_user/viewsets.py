@@ -1,29 +1,22 @@
-from django.contrib.auth import get_user_model
 from rest_framework import viewsets, decorators
 from rest_framework.permissions import (
     AllowAny, IsAuthenticated, BasePermission,
 )
-from ..settings import base_settings
-from ..qx_core.storage import ProxyCache
-from ..qx_rest.mixins import (
-    PostModelMixin,
-    PutModelMixin,
-    GetOneModelMixin,
-    RestCacheNameMixin,
-)
+# from ..qx_core.storage import ProxyCache
+from ..qx_rest import mixins
 from ..qx_rest.response import ApiResponse
 from .serializers import (
+    User,
+    UserInfo,
     SigninSerializer,
     SignupSerializer,
     SendCodeSerializer,
     UpdateMobileSerializer,
     UpdateEmailSerializer,
+    UserInfoSerializer,
 )
 
 # Create your views here.
-
-
-User = get_user_model()
 
 
 class UserPermission(BasePermission):
@@ -34,10 +27,10 @@ class UserPermission(BasePermission):
 
 
 class UserViewSet(viewsets.GenericViewSet,
-                  PostModelMixin,
-                  PutModelMixin,
-                  GetOneModelMixin,
-                  RestCacheNameMixin,):
+                  mixins.PostModelMixin,
+                  mixins.PutModelMixin,
+                  mixins.GetOneModelMixin,
+                  mixins.RestCacheNameMixin,):
     '''
     登录注册
     ---
@@ -65,11 +58,6 @@ class UserViewSet(viewsets.GenericViewSet,
         更新邮箱
 
         更新邮箱
-
-    retrieve_info:
-        获取用户信息
-
-        获取用户信息
     '''
     permission_classes = (
         UserPermission,
@@ -87,8 +75,6 @@ class UserViewSet(viewsets.GenericViewSet,
             return UpdateMobileSerializer
         elif self.action == 'update_email':
             return UpdateEmailSerializer
-        elif self.action == 'retrieve_info':
-            return base_settings.USERINFO_SERIALIZER_CLASS
         return {}
 
     @decorators.action(methods=['post'], url_path='signup', detail=False)
@@ -115,14 +101,24 @@ class UserViewSet(viewsets.GenericViewSet,
         return ApiResponse(data=self._update(
             request, instance, *args, **kwargs))
 
-    @decorators.action(methods=['get'], url_path='info', detail=False)
-    def retrieve_info(self, request, *args, **kwargs):
-        instance = request.user
-        key = self.get_cache_name([instance.id])
-        proxy = ProxyCache(key, 60 * 60 * 24 * 15)
-        if data := proxy.get():
-            return ApiResponse(data=data)
-        data = self._get_one(instance)
-        if data:
-            proxy.set(data)
-        return ApiResponse(data=data)
+
+class UserInfoViewSet(viewsets.GenericViewSet,
+                      mixins.ListModelMixin,
+                      mixins.PutModelMixin,
+                      mixins.UserFilterMixin,):
+
+    '''
+    用户信息
+    ---
+    list:
+        获取用户信息
+
+        获取用户信息
+
+    '''
+    permission_classes = (
+        UserPermission,
+    )
+    queryset = UserInfo.objects.all() if UserInfo else None
+
+    serializer_class = UserInfoSerializer

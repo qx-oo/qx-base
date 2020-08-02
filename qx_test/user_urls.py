@@ -5,6 +5,7 @@ from qx_base.qx_user import viewsets
 
 router = DefaultRouter()
 router.register('user', viewsets.UserViewSet)
+router.register('userinfo', viewsets.UserInfoViewSet)
 
 
 urlpatterns_api = [
