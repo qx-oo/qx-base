@@ -88,6 +88,7 @@ class User(AbstractBaseUser, PermissionsMixin, AbstractBaseModel):
         return self.account
 
     class Meta:
+        abstract = True
         verbose_name = '用户'
         verbose_name_plural = verbose_name
         swappable = 'AUTH_USER_MODEL'

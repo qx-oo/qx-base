@@ -55,7 +55,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'tests.urls'
+ROOT_URLCONF = 'qx_test.urls'
 
 TEMPLATES = [
     {
@@ -73,7 +73,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'tests.wsgi.application'
+WSGI_APPLICATION = 'qx_test.wsgi.application'
 
 
 # Database
@@ -190,7 +190,7 @@ ElBD6PTOifsl8TBQ2cQhPC//+/oP9wJlbXO0+G4VPSuM
 
 
 QX_BASE_SETTINGS = {
-    'SEND_MOBILE_MSG_CLASS': "tests.msg.TestMsg",
-    'SEND_EMAIL_MSG_CLASS': "tests.msg.TestMsg",
+    'SEND_MOBILE_MSG_CLASS': "qx_test.msg.TestMsg",
+    'SEND_EMAIL_MSG_CLASS': "qx_test.msg.TestMsg",
     'USERINFO_SERIALIZER_CLASS': "qx_base.qx_user.serializers.UserInfoSerializer",  # noqa
 }
