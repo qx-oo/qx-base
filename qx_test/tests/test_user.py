@@ -53,7 +53,8 @@ class TestUserViewSet:
         data = json.loads(response.content)
         assert data['data']['token']
 
-        _, code = CodeMsg(None, None, '18866668888', _type='signin').get_code()
+        _, code = CodeMsg(None, None, '18866668888',
+                          _type='signin').get_new_code()
         data = {
             "account": "18866668888",
             "code": code

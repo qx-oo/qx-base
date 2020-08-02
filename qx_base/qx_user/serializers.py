@@ -175,6 +175,7 @@ class UpdateMobileSerializer(serializers.ModelSerializer):
             validated_data['account'] = mobile
 
         instance = super().update(instance, validated_data)
+        instance.clear_cache()
         return instance
 
     class Meta:
@@ -199,6 +200,7 @@ class UpdateEmailSerializer(serializers.ModelSerializer):
         if instance.email == instance.account:
             validated_data['account'] = email
         instance = super().update(instance, validated_data)
+        instance.clear_cache()
         return instance
 
     class Meta:
@@ -211,10 +213,3 @@ class UserInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('id', 'mobile', 'email',)
-
-
-# class UpdateUserSerializer(serializers.Serializer):
-
-#     class Meta:
-#         model = UserInfo
-#         fields = ('nick_name',)

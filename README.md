@@ -17,8 +17,6 @@ settings.py:
         ...
     ]
 
-    AUTH_USER_MODEL = "qx_user.User"
-
     JWT_TOKEN_KEYWORD = "Token"
 
     # RestFramework
@@ -55,6 +53,32 @@ settings.py:
         'USERINFO_SERIALIZER_CLASS': "qx_base.qx_user.serializers.UserInfoSerializer",  # noqa
         'USERLASTACCESS_CLASS': "qx_base.qx_user.tools.UserLastAccessTime",
     }
+
+User models.py:
+
+    from django.contrib.auth.models import AbstractBaseUser
+    from qx_base.qx_user.models import QxUser, QxUser_Meta
+
+
+    class User(AbstractBaseUser, QxUser):
+        """
+        User Model
+        """
+
+        Meta = QxUser_Meta
+
+User urls.py
+
+    from django.urls import path, include
+    from rest_framework.routers import DefaultRouter
+    from qx_base.qx_user import viewsets
+
+    router = DefaultRouter()
+    router.register('user', viewsets.UserViewSet)
+
+    urlpatterns = [
+        path('', include(router.urls)),
+    ]
 
 
 ### Mac OS:

@@ -1,5 +1,5 @@
 import pytest
-from qx_base.qx_user.models import User
+from qx_test.user.models import User
 from qx_base.qx_core.storage import RedisClient
 
 

@@ -1,8 +1,8 @@
 import time
 from django.db import models
+from django.conf import settings
 from django.utils import timezone
 from django.contrib.auth.models import (
-    AbstractBaseUser,
     BaseUserManager,
     PermissionsMixin,
 )
@@ -17,7 +17,7 @@ class UserManager(BaseUserManager):
 
     def _create_user(self, mobile: str, email: str, password: str,
                      is_staff: bool, is_superuser: bool,
-                     **extra_fields) -> "User":
+                     **extra_fields) -> "QxUser":
         """
         create user by and mobile
         """
@@ -34,17 +34,24 @@ class UserManager(BaseUserManager):
         return user
 
     def create_user(self, mobile: str, email: str, password: str = None,
-                    **extra_fields) -> "User":
+                    **extra_fields) -> "QxUser":
         return self._create_user(mobile, email, password, False, False,
                                  **extra_fields)
 
     def create_superuser(self, account: str, password: str,
-                         **extra_fields) -> "User":
+                         **extra_fields) -> "QxUser":
         return self._create_user(account, None, password, True, True,
                                  **extra_fields)
 
 
-class User(AbstractBaseUser, PermissionsMixin, AbstractBaseModel):
+class QxUser_Meta:
+    verbose_name = '用户'
+    verbose_name_plural = verbose_name
+    swappable = 'AUTH_USER_MODEL'
+    unique_together = (('mobile', 'email',),)
+
+
+class QxUser(PermissionsMixin, AbstractBaseModel):
     """
     User base info
     """
@@ -84,23 +91,25 @@ class User(AbstractBaseUser, PermissionsMixin, AbstractBaseModel):
         token = UserJWT.encode(self)
         return token
 
+    def clear_cache(self):
+        self.user.userinfo.clear_cache()
+
     def __str__(self):
         return self.account
 
     class Meta:
         abstract = True
-        verbose_name = '用户'
-        verbose_name_plural = verbose_name
-        swappable = 'AUTH_USER_MODEL'
-        unique_together = (('mobile', 'email',),)
 
 
-class UserInfo(AbstractBaseModel):
+class QxUserInfo(models.Model):
     user = models.OneToOneField(
-        User, on_delete=models.CASCADE, primary_key=True,
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, primary_key=True,
         verbose_name="用户")
 
     def get_userinfo(self):
+        raise NotImplementedError()
+
+    def clear_cache(self):
         raise NotImplementedError()
 
     class Meta:

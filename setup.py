@@ -9,7 +9,7 @@ setup(
     url='https://github.com/qx-oo/qx-base/',
     description='Django base apps.',
     long_description=open("README.md").read(),
-    packages=find_packages(exclude=["tests", "qx_tests"]),
+    packages=find_packages(exclude=["tests", "qx_test"]),
     install_requires=[
         'Django >= 3.0',
         'djangorestframework >= 3.11.0',

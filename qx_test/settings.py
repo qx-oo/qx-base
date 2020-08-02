@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     'qx_base.qx_core',
     'qx_base.qx_rest',
     'qx_base.qx_user',
+    #
+    'qx_test.user',
 ]
 
 MIDDLEWARE = [
@@ -125,7 +127,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-AUTH_USER_MODEL = "qx_user.User"
+AUTH_USER_MODEL = "user.User"
 
 # qx_base
 JWT_AUTH = {
