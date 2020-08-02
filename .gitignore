@@ -9,4 +9,4 @@ db.sqlite3
 __pycache__
 build/
 dist/
-qx_base.egg-info
+*.egg-info
