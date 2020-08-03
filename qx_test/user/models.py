@@ -19,6 +19,8 @@ class UserInfo(QxUserInfo, RestCacheModel):
     name = models.CharField(
         verbose_name="用户名称", default="",
         max_length=50)
+    age = models.IntegerField(
+        verbose_name="年龄")
 
     class Meta:
         verbose_name = 'UserInfo'

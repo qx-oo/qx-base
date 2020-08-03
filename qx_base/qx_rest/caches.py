@@ -162,24 +162,31 @@ class RestCacheMeta(type):
         return "{}:*".format(RestCacheKey._cache_keys(cls))
 
     def get_cache_list_key(self, request) -> str:
-        query_data = OrderedDict(sorted(
-            [
-                (key, None)
-                for key in self.cache_keys
-            ]
-        ))
-        for key, val in getattr(request, self._query_params).items():
-            if key in self.cache_keys:
-                query_data[key] = val
-        query_str = urllib.parse.urlencode(query_data)
-        key = hashlib.md5(query_str.encode()).hexdigest()
         onlyuser = self.cache_onlyuser_by_action.get(self.action, False)
-        if onlyuser:
-            key = "{}:{}:{}".format(
-                RestCacheKey._cache_keys(self), request.user.id, key)
+        if self.cache_keys:
+            query_data = OrderedDict(sorted(
+                [
+                    (key, None)
+                    for key in self.cache_keys
+                ]
+            ))
+            for key, val in getattr(request, self._query_params).items():
+                if key in self.cache_keys:
+                    query_data[key] = val
+            query_str = urllib.parse.urlencode(query_data)
+            key = hashlib.md5(query_str.encode()).hexdigest()
+            if onlyuser:
+                key = "{}:{}:{}".format(
+                    RestCacheKey._cache_keys(self), request.user.id, key)
+            else:
+                key = "{}:{}".format(
+                    RestCacheKey._cache_keys(self), key)
         else:
-            key = "{}:{}".format(
-                RestCacheKey._cache_keys(self), key)
+            if onlyuser:
+                key = "{}:{}".format(
+                    RestCacheKey._cache_keys(self), request.user.id)
+            else:
+                key = RestCacheKey._cache_keys(self)
         return key
 
     @staticmethod

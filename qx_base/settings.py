@@ -8,6 +8,7 @@ QX_BASE_SETTINGS = {
     'SEND_EMAIL_MSG_CLASS': "qx_base.qx_user.mixins.SendEmailMsgMixin",
     'USERLASTACCESS_CLASS': "qx_base.qx_user.tools.UserLastAccessTime",
     'USERINFO_MODEL_CLASS': None,
+    'USERINFO_SERIALIZER_CLASS': None,
 }
 
 _b_settings = QX_BASE_SETTINGS
@@ -22,6 +23,8 @@ def get_attr(key, val):
     if key.endswith('_CLASS'):
         if val:
             return import_string(val)
+        else:
+            raise ImportError('Settings {} import error.'.format(key))
     return val
 
 

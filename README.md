@@ -50,21 +50,29 @@ settings.py:
     QX_BASE_SETTINGS = {
         'SEND_MOBILE_MSG_CLASS': "qx_test.msg.TestMsg",
         'SEND_EMAIL_MSG_CLASS': "qx_test.msg.TestMsg",
-        'USERLASTACCESS_CLASS': "qx_base.qx_user.tools.UserLastAccessTime",
+        'USERINFO_MODEL_CLASS': "qx_test.user.models.UserInfo",
+        'USERINFO_SERIALIZER_CLASS': "qx_test.user.serializers.UserinfoSerializer",
     }
 
 User models.py:
 
     from django.contrib.auth.models import AbstractBaseUser
-    from qx_base.qx_user.models import QxUser, QxUser_Meta
+    from qx_base.qx_user.models import QxUser, QxUser_Meta, QxUserInfo
 
 
     class User(AbstractBaseUser, QxUser):
-        """
-        User Model
-        """
 
         Meta = QxUser_Meta
+
+    class UserInfo(QxUserInfo, RestCacheModel):
+    name = models.CharField(
+        verbose_name="Name", default="", max_length=50)
+    age = models.IntegerField(
+        verbose_name="Age")
+
+    class Meta:
+        verbose_name = 'UserInfo'
+        verbose_name_plural = verbose_name
 
 User urls.py
 
@@ -74,6 +82,7 @@ User urls.py
 
     router = DefaultRouter()
     router.register('user', viewsets.UserViewSet)
+    router.register('userinfo', viewsets.UserInfoViewSet)
 
     urlpatterns = [
         path('', include(router.urls)),

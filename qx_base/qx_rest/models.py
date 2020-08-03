@@ -112,7 +112,10 @@ class RestCacheModel(AbstractBaseModel):
 
     def _default_clear_cache(self, cls: "class", val: dict):
         list_action, retrieve_action = self._get_action(cls, val)
-        _id = getattr(self, val.get("retrieve_field", 'id'))
+        if retrieve_action:
+            _id = getattr(self, val.get("retrieve_field", 'id'))
+        else:
+            _id = None
 
         def _func():
             for item in list_action:

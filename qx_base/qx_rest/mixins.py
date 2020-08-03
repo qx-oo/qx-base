@@ -113,7 +113,7 @@ class PutModelMixin():
         serializer = self.get_serializer(
             instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
+        serializer.save()
 
         if getattr(instance, '_prefetched_objects_cache', None):
             instance._prefetched_objects_cache = {}
@@ -187,11 +187,3 @@ class RestCacheNameMixin():
         for arg in args:
             key += ':{}'.format(arg)
         return key
-
-
-class UserFilterMixin():
-
-    def get_queryset(self):
-        if self.request.user.is_authenticated:
-            return self.queryset.filter(user=self.request.user)
-        return self.queryset

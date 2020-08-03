@@ -1,22 +1,25 @@
+from django.http import Http404
 from rest_framework import viewsets, decorators
 from rest_framework.permissions import (
     AllowAny, IsAuthenticated, BasePermission,
 )
-# from ..qx_core.storage import ProxyCache
+from ..settings import base_settings
 from ..qx_rest import mixins
 from ..qx_rest.response import ApiResponse
 from .serializers import (
     User,
-    UserInfo,
     SigninSerializer,
     SignupSerializer,
     SendCodeSerializer,
     UpdateMobileSerializer,
     UpdateEmailSerializer,
-    UserInfoSerializer,
 )
 
 # Create your views here.
+
+
+UserInfo = base_settings.USERINFO_MODEL_CLASS
+UserInfoSerializer = base_settings.USERINFO_SERIALIZER_CLASS
 
 
 class UserPermission(BasePermission):
@@ -104,8 +107,7 @@ class UserViewSet(viewsets.GenericViewSet,
 
 class UserInfoViewSet(viewsets.GenericViewSet,
                       mixins.ListModelMixin,
-                      mixins.PutModelMixin,
-                      mixins.UserFilterMixin,):
+                      mixins.PutModelMixin,):
 
     '''
     用户信息
@@ -115,10 +117,41 @@ class UserInfoViewSet(viewsets.GenericViewSet,
 
         获取用户信息
 
+    update:
+        更新用户信息
+
+        更新用户信息
     '''
     permission_classes = (
-        UserPermission,
+        IsAuthenticated,
     )
     queryset = UserInfo.objects.all() if UserInfo else None
-
     serializer_class = UserInfoSerializer
+
+    is_paginate = False
+    cache_list = True
+    user_field = "user"
+    cache_onlyuser_by_action = {
+        "list": True,
+    }
+    cache_time_by_action = {
+        'list': 60 * 60 * 24 * 10,
+    }
+
+    def get_queryset(self):
+        if self.request.user.is_authenticated:
+            return self.queryset.filter(user=self.request.user)
+        return self.queryset
+
+    def list(self, request, *args, **kwargs):
+        data = self._list(request, *args, **kwargs)
+        if data:
+            data = data[0]
+        else:
+            raise Http404()
+        return ApiResponse(data)
+
+    def update(self, request, *args, **kwargs):
+        instance = request.user.userinfo
+        return ApiResponse(data=self._update(
+            request, instance, *args, **kwargs))

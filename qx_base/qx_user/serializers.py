@@ -1,15 +1,22 @@
 from rest_framework import serializers, exceptions
-from django.contrib.auth import get_user_model
 from django.db.models import Q
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, get_user_model
+from django.db import transaction
 from ..qx_rest.exceptions import SerializerFieldError
 from ..qx_core.tools import DictInstance
 from ..settings import base_settings
 from .tools import CodeMsg
+# from .models import _UserInfo as UserInfo
 
 
 User = get_user_model()
-UserInfo = base_settings.USERINFO_MODEL_CLASS
+
+
+# class UserInfoSerializer(serializers.ModelSerializer):
+
+#     class Meta:
+#         model = UserInfo
+#         fields = ('id', 'name',)
 
 
 class SendCodeSerializer(serializers.Serializer):
@@ -73,11 +80,21 @@ class SignupSerializer(serializers.Serializer):
         label="邮箱", max_length=50, required=False)
     code = serializers.CharField(
         label="验证码", max_length=10, required=False, write_only=True)
+    password = serializers.CharField(
+        label="密码", max_length=50, required=False, write_only=True)
+    userinfo = base_settings.USERINFO_SERIALIZER_CLASS(
+        label="用户信息")
+    token = serializers.SerializerMethodField(
+        label="token")
+
+    def get_token(self, instance):
+        return instance.get_new_token()
 
     def create(self, validated_data):
         code = validated_data.pop('code', None)
         mobile = validated_data.pop('mobile', None)
         email = validated_data.pop('email', None)
+        password = validated_data.pop('password', None)
         if not email and not mobile:
             serializers.ValidationError('email or mobile empty')
         account = email or mobile
@@ -95,7 +112,14 @@ class SignupSerializer(serializers.Serializer):
         if code != _code:
             raise SerializerFieldError(
                 '验证码错误', field='code')
-        return User.objects.create_user(mobile, email)
+        with transaction.atomic():
+            instance = User.objects.create_user(mobile, email, password)
+            # userinfo
+            data = validated_data.pop('userinfo', None)
+            serializer = base_settings.USERINFO_SERIALIZER_CLASS(data=data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save(user=instance)
+        return instance
 
     class Meta:
         model = User
@@ -207,10 +231,3 @@ class UpdateEmailSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('email', 'code',)
-
-
-class UserInfoSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = UserInfo
-        fields = ('id', 'name',)

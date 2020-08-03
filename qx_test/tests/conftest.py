@@ -1,5 +1,5 @@
 import pytest
-from qx_test.user.models import User
+from qx_test.user.models import User, UserInfo
 from qx_base.qx_core.storage import RedisClient
 
 
@@ -13,10 +13,15 @@ def redis_flushall():
 @pytest.fixture()
 def user_data_init(db):
     for i in range(10):
-        User.objects.create_user(
+        user = User.objects.create_user(
             mobile="1886666888%s" % i,
             email=None,
             password="12345678",
+        )
+        UserInfo.objects.create(
+            name="test%s" % i,
+            age=i,
+            user=user,
         )
 
 

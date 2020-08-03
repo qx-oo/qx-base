@@ -73,6 +73,18 @@ class QxUser(PermissionsMixin, AbstractBaseModel):
     created = models.DateTimeField(
         verbose_name='创建时间', default=timezone.now, editable=False)
 
+    REST_CACHE_CLASS = {
+        "default": {
+            "UserInfoViewSet": {
+                "list_action": [
+                    "list"
+                ],
+                "field_only": True,
+                "field_name": "id"
+            }
+        }
+    }
+
     objects = UserManager()
 
     USERNAME_FIELD = 'account'
@@ -106,8 +118,17 @@ class QxUserInfo(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, primary_key=True,
         verbose_name="用户")
 
-    def get_userinfo(self):
-        raise NotImplementedError()
+    REST_CACHE_CLASS = {
+        "default": {
+            "UserInfoViewSet": {
+                "list_action": [
+                    "list"
+                ],
+                "field_only": True,
+                "field_name": "user_id"
+            }
+        },
+    }
 
     def clear_cache(self):
         raise NotImplementedError()

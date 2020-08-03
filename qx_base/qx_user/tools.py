@@ -1,6 +1,6 @@
 import time
 import random
-from django.apps import apps
+from django.contrib.auth import get_user_model
 from django.utils import timezone
 from ..qx_core.storage import RedisClient, RedisExpiredHash
 
@@ -9,7 +9,7 @@ class AccessTimeMixin():
 
     def __init__(self):
         self.client = RedisClient().get_conn()
-        self.model = apps.get_model('qx_user.User')
+        self.model = get_user_model()
         self.field = 'user'
 
     def save_access_time_to_db(self):
