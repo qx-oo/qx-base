@@ -3,21 +3,7 @@ description = """
 
 获取服务端 token, 需要认证的请求在 http 的 header 中添加 MYAUTHORIZATION 参数:
 
-    MYAUTHORIZATION: token {value}
-
-# Anonymous Auth
-
-获取服务端 token, 匿名认证的请求在 http 的 header 中添加 MYAUONYMOUS 参数:
-
-    MYAUONYMOUS: token {value}
-
-# Platform Category (平台)
-
-* 1: 微信babily小程序
-* 2: 头条babily小程序
-* 3: 微信孕前体重小程序
-* 4: 微信成长曲线小程序
-* 5: 微信促销小程序
+    MYAUTHORIZATION: token <value>
 
 # API 相关信息
 
@@ -41,4 +27,4 @@ JsonResponse Code:
 * 4007 请求对应字段错误 (添加detail参数)
 * 4013 用户没有操作权限
 * 5000 服务器错误
-""",  # noqa
+"""  # noqa
