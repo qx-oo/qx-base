@@ -96,14 +96,15 @@ class SignupSerializer(serializers.Serializer):
     def get_token(self, instance):
         return instance.get_new_token()
 
-    def create(self, validated_data):
-        code = validated_data.pop('code', None)
-        mobile = validated_data.pop('mobile', None)
-        email = validated_data.pop('email', None)
-        password = validated_data.pop('password', None)
-        if not email and not mobile:
-            serializers.ValidationError('email or mobile empty')
+    def _create_user(self, mobile, email, password, userinfo):
+        instance = User.objects.create_user(mobile, email, password)
+        # userinfo
+        serializer = base_settings.USERINFO_SERIALIZER_CLASS(data=userinfo)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(user=instance)
+        return instance
 
+    def _check_user_exists(self, email, mobile):
         account = email or mobile
         if User.objects.filter(
                 Q(mobile=account) | Q(email=account) | Q(account=account)
@@ -114,6 +115,18 @@ class SignupSerializer(serializers.Serializer):
             else:
                 raise SerializerFieldError(
                     '用户已存在', field='mobile')
+
+    def create(self, validated_data):
+        code = validated_data.pop('code', None)
+        mobile = validated_data.pop('mobile', None)
+        email = validated_data.pop('email', None)
+        password = validated_data.pop('password', None)
+        userinfo = validated_data.pop('userinfo', None)
+        if not email and not mobile:
+            raise serializers.ValidationError('email and mobile empty')
+
+        self._check_user_exists(email, mobile)
+
         object_id = email or mobile
         _code = CodeMsg(
             object_id, _type='signup').get_code()
@@ -123,12 +136,8 @@ class SignupSerializer(serializers.Serializer):
 
         # creaste user
         with transaction.atomic():
-            instance = User.objects.create_user(mobile, email, password)
-            # userinfo
-            data = validated_data.pop('userinfo', None)
-            serializer = base_settings.USERINFO_SERIALIZER_CLASS(data=data)
-            serializer.is_valid(raise_exception=True)
-            serializer.save(user=instance)
+            instance = self._create_user(
+                mobile, email, password, userinfo)
         return instance
 
     class Meta:
