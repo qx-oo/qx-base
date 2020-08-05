@@ -40,7 +40,7 @@ class TestUserViewSet:
         data = json.loads(response.content)
         assert data['data']['token']
 
-        _, code = CodeMsg(None, None, '18866668888',
+        _, code = CodeMsg('18866668888',
                           _type='signin').get_new_code()
         data = {
             "account": "18866668888",
@@ -57,7 +57,7 @@ class TestUserViewSet:
     @pytest.mark.django_db
     def test_signup(self, rf, user_data_init):
         mobile = '18866668800'
-        _, code = CodeMsg(None, None, mobile,
+        _, code = CodeMsg(mobile,
                           _type='signup').get_new_code()
 
         url = '{}/user/signup/'.format(self.url)

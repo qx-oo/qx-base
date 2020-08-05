@@ -55,19 +55,11 @@ class UserLastAccessTime(AccessTimeMixin):
 
 class CodeMsg():
     """
-    发送验证码
+    验证码生成
     """
 
-    def __init__(self, user_id=None, email=None, mobile=None,
-                 _type='', expire_time=60 * 10):
-        if user_id:
-            self.key = user_id
-        elif email:
-            self.key = email
-        elif mobile:
-            self.key = mobile
-        else:
-            raise ValueError('user_id, email or mobile is null')
+    def __init__(self, object_id, _type='', expire_time=60 * 10):
+        self.key = object_id
         self.cache = RedisExpiredHash('codemsg{}'.format(_type))
 
     def get_new_code(self) -> (bool, str):

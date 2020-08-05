@@ -34,6 +34,7 @@ class SendCodeSerializer(serializers.Serializer):
         if _type in ['default', 'changepwd']:
             if not self.context['request'].user.is_authenticated:
                 raise exceptions.AuthenticationFailed("认证失败")
+
         send_type = validated_data['send_type']
         if send_type == 'mobile':
             send_cls = base_settings.SEND_MOBILE_MSG_CLASS
@@ -42,6 +43,7 @@ class SendCodeSerializer(serializers.Serializer):
         else:
             raise SerializerFieldError(
                 '类型错误', field='send_type')
+
         mobile, email, uid = None, None, None
         if _type == 'default':
             if user := self.context['request'].user:
@@ -58,7 +60,11 @@ class SendCodeSerializer(serializers.Serializer):
             email = validated_data.pop('email', None)
         if not email and not mobile:
             raise serializers.ValidationError('email or mobile error')
-        c_ins = CodeMsg(uid, email, mobile, _type=_type)
+
+        object_id = mobile if send_type == 'mobile' else email
+        object_id = uid or object_id
+
+        c_ins = CodeMsg(object_id, _type=_type)
         is_send, code = c_ins.get_new_code()
         if is_send:
             raise serializers.ValidationError('5分钟后才能再次发送')
@@ -97,6 +103,7 @@ class SignupSerializer(serializers.Serializer):
         password = validated_data.pop('password', None)
         if not email and not mobile:
             serializers.ValidationError('email or mobile empty')
+
         account = email or mobile
         if User.objects.filter(
                 Q(mobile=account) | Q(email=account) | Q(account=account)
@@ -107,11 +114,14 @@ class SignupSerializer(serializers.Serializer):
             else:
                 raise SerializerFieldError(
                     '用户已存在', field='mobile')
+        object_id = email or mobile
         _code = CodeMsg(
-            None, email, mobile, _type='signup').get_code()
+            object_id, _type='signup').get_code()
         if code != _code:
             raise SerializerFieldError(
                 '验证码错误', field='code')
+
+        # creaste user
         with transaction.atomic():
             instance = User.objects.create_user(mobile, email, password)
             # userinfo
@@ -153,6 +163,7 @@ class SigninSerializer(serializers.Serializer):
         if not user:
             raise SerializerFieldError(
                 '用户不存在', field='account')
+
         if password:
             auth_user = authenticate(account=user.account, password=password)
             if not auth_user:
@@ -166,7 +177,8 @@ class SigninSerializer(serializers.Serializer):
                 email = account
             else:
                 raise serializers.Serializer('发送类型错误')
-            c_ins = CodeMsg(None, email, mobile, _type='signin')
+            object_id = email or mobile
+            c_ins = CodeMsg(object_id, _type='signin')
             _code = c_ins.get_code()
 
             if _code != code:
@@ -192,7 +204,7 @@ class UpdateMobileSerializer(serializers.ModelSerializer):
         code = validated_data.pop('code', None)
         mobile = validated_data['mobile']
         _code = CodeMsg(
-            None, None, mobile, _type='default').get_code()
+            mobile, _type='default').get_code()
         if code != _code:
             raise SerializerFieldError(
                 '验证码错误', field='code')
@@ -218,7 +230,7 @@ class UpdateEmailSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         code = validated_data.pop('code', None)
         email = validated_data['email']
-        _code = CodeMsg(None, email, None, _type='default').get_code()
+        _code = CodeMsg(email, _type='default').get_code()
         if code != _code:
             raise SerializerFieldError(
                 '验证码错误', field='code')
