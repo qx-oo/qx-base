@@ -130,7 +130,6 @@ class UserInfoViewSet(viewsets.GenericViewSet,
 
     is_paginate = False
     cache_list = True
-    user_field = "user"
     cache_onlyuser_by_action = {
         "list": True,
     }

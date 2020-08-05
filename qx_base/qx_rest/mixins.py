@@ -126,7 +126,7 @@ class DeleteModelMixin():
     def _destroy(self, request, instance=None, *args, **kwargs):
         if not instance:
             raise Http404()
-        self.perform_destroy(instance)
+        instance.delete()
         return {}
 
 
