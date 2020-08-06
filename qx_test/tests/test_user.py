@@ -122,11 +122,17 @@ class TestBaby:
         user1 = User.objects.get(account='18866668881')
         user2 = User.objects.get(account='18866668882')
         user3 = User.objects.get(account='18866668883')
-        Baby.objects.create(name='test1', type="user", object_id=user1.id)
-        Baby.objects.create(name='test2', type="user", object_id=user2.id)
-        Baby.objects.create(name='test3', type="user", object_id=user3.id)
-        Baby.objects.create(name='test4', type="test", object_id=None)
+        Baby.objects.create(name='test1', type="user",
+                            object_id=user1.id, user_id=user1.id,)
+        Baby.objects.create(name='test2', type="user",
+                            object_id=user2.id, user_id=user2.id,)
+        Baby.objects.create(name='test3', type="user",
+                            object_id=user3.id, user_id=0,)
+        Baby.objects.create(name='test4', type="test",
+                            object_id=None, user_id=user1.id,)
 
         queryset = Baby.objects.all()
         queryset = Baby.prefetch_type_object(queryset)
+        breakpoint()
+        queryset = Baby.load_user(queryset)
         assert hasattr(queryset[0], 'type_object')

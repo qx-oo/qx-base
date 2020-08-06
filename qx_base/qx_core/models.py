@@ -29,6 +29,24 @@ def load_queryset_type_object(queryset, field, model, _type=''):
     }
 
 
+def load_set_queryset_object(queryset, model, field_id, set_field):
+    """
+    Load model queryset by obj_id
+        queryset: model queryset
+        model: django model
+        field_id: queryset model field
+        set_field: set field
+    """
+    ids = [getattr(ins, field_id) for ins in queryset]
+    data = {
+        ins.id: ins
+        for ins in model.objects.filter(id__in=ids)
+    }
+    for ins in queryset:
+        setattr(ins, set_field, data.get(getattr(ins, field_id)))
+    return queryset
+
+
 class AbstractBaseModel(models.Model):
 
     created = models.DateTimeField(
