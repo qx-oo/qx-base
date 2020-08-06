@@ -66,7 +66,10 @@ class CodeMsg():
         """
         return: 是否缓存, code
         """
-        if code := self.cache.hget(self.key):
+        # TODO:
+        # if code := self.cache.hget(self.key):
+        code = self.cache.hget(self.key)
+        if code:
             return True, code
         code = random.sample(list(range(10)), 6)
         code = ''.join([str(i) for i in code])

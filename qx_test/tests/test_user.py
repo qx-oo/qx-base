@@ -2,6 +2,7 @@ import pytest
 import json
 from qx_base.qx_user.viewsets import UserViewSet, UserInfoViewSet
 from qx_base.qx_user.tools import CodeMsg
+from qx_test.user.models import User, Baby
 
 
 class TestUserViewSet:
@@ -112,3 +113,20 @@ class TestUserInfoViewSet:
         assert response.status_code == 200
         data = json.loads(response.content)
         assert data['code'] == 200
+
+
+class TestBaby:
+
+    @pytest.mark.django_db
+    def test_model(self, user_data_init):
+        user1 = User.objects.get(account='18866668881')
+        user2 = User.objects.get(account='18866668882')
+        user3 = User.objects.get(account='18866668883')
+        Baby.objects.create(name='test1', type="user", object_id=user1.id)
+        Baby.objects.create(name='test2', type="user", object_id=user2.id)
+        Baby.objects.create(name='test3', type="user", object_id=user3.id)
+        Baby.objects.create(name='test4', type="test", object_id=None)
+
+        queryset = Baby.objects.all()
+        queryset = Baby.prefetch_type_object(queryset)
+        assert hasattr(queryset[0], 'type_object')

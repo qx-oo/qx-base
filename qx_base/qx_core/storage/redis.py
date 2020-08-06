@@ -99,7 +99,10 @@ class RedisExpiredHash():
         获取值
         """
         for name in self._query_name():
-            if data := self.client.hget(name, key):
+            # TODO:
+            # if data := self.client.hget(name, key):
+            data = self.client.hget(name, key)
+            if data:
                 val = json.loads(data)
                 if val['tm'] > self.current:
                     return val['val']

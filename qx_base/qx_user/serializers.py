@@ -46,7 +46,10 @@ class SendCodeSerializer(serializers.Serializer):
 
         mobile, email, uid = None, None, None
         if _type == 'default':
-            if user := self.context['request'].user:
+            # TODO:
+            # if user := self.context['request'].user:
+            user = self.context['request'].user
+            if user:
                 uid = user.id
                 mobile = user.mobile
                 email = user.email
