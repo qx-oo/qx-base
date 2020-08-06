@@ -2,7 +2,6 @@ from django.apps import apps
 from django.db import models
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
-# from django.apps import apps
 
 # Create your models here.
 
@@ -10,16 +9,6 @@ from django.contrib.contenttypes.models import ContentType
 def get_model_id(model):
     return ContentType.objects.get_for_model(
         model).id
-
-
-def load_model_by_str(model_str):
-    """
-    example: User = load_model_by_str("user.User")
-    """
-    params = model_str.rsplit('.', 1)
-    if len(params) != 2:
-        raise TypeError()
-    return apps.get_model(params[0], params[1])
 
 
 def load_queryset_type_object(queryset, field, model, _type='',
@@ -91,7 +80,7 @@ class ContentTypeRelated(models.Model):
     @staticmethod
     def qx_apps_ready(model):
         model.type_map_model = {
-            _type: load_model_by_str(model_str) if model_str else model_str
+            _type: apps.get_model(model_str) if model_str else model_str
             for _type, model_str in model.type_map_model.items()
         }
 

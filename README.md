@@ -3,7 +3,7 @@ my django project basic module
 
 ### Install:
 
-    pip install -e git://github.com/qx-oo/qx-base.git@master#egg=qx-base
+    $ pip install -e git://github.com/qx-oo/qx-base.git@master#egg=qx-base
 
 ### Usage:
 
@@ -91,10 +91,16 @@ User urls.py
 
 ### Mac OS:
 
-    brew install gmp
-    export "CFLAGS=-I/usr/local/include -L/usr/local/Cellar/gmp/6.2.0/lib"
+gmp:
+
+    $ brew install gmp
+    $ export "CFLAGS=-I/usr/local/include -L/usr/local/Cellar/gmp/6.2.0/lib"
+
+pscopg2:
+
+    $ env LDFLAGS="-I/usr/local/opt/openssl/include -L/usr/local/opt/openssl/lib" pip install psycopg2==2.8.3
 
 ### Signature Keys
 
-    openssl genrsa -out rsa_pri_key.pem 1024
-    openssl rsa -in rsa_pri_key.pem -pubout -out rsa_pub_key.pem
+    $ openssl genrsa -out rsa_pri_key.pem 1024
+    $ openssl rsa -in rsa_pri_key.pem -pubout -out rsa_pub_key.pem
