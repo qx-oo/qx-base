@@ -13,23 +13,30 @@ def get_model_id(model):
 
 
 def load_model_by_str(model_str):
+    """
+    example: User = load_model_by_str("user.User")
+    """
     params = model_str.rsplit('.', 1)
     if len(params) != 2:
         raise TypeError()
     return apps.get_model(params[0], params[1])
 
 
-def load_queryset_type_object(queryset, field, model, _type=''):
+def load_queryset_type_object(queryset, field, model, _type='',
+                              select_related=[]):
     ids = []
     for ins in queryset:
         ids.append(getattr(ins, field))
     return {
         "{}_{}".format(ins.id, _type): ins
-        for ins in list(model.objects.filter(id__in=ids))
+        for ins in list(
+            model.objects.select_related(
+                *select_related).filter(id__in=ids))
     }
 
 
-def load_set_queryset_object(queryset, model, field_id, set_field):
+def load_set_queryset_object(queryset, model, field_id, set_field,
+                             select_related=[]):
     """
     Load model queryset by obj_id
         queryset: model queryset
@@ -40,7 +47,8 @@ def load_set_queryset_object(queryset, model, field_id, set_field):
     ids = [getattr(ins, field_id) for ins in queryset]
     data = {
         ins.id: ins
-        for ins in model.objects.filter(id__in=ids)
+        for ins in list(model.objects.select_related(
+            *select_related).filter(id__in=ids))
     }
     for ins in queryset:
         setattr(ins, set_field, data.get(getattr(ins, field_id)))

@@ -43,7 +43,8 @@ class Baby(ContentTypeRelated, RestCacheModel):
 
     @staticmethod
     def load_user(queryset):
-        return load_set_queryset_object(queryset, User, 'user_id', 'user')
+        return load_set_queryset_object(
+            queryset, User, 'user_id', 'user', ['userinfo'])
 
     class Meta:
         verbose_name = 'Baby'

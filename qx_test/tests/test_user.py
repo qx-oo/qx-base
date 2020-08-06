@@ -133,6 +133,5 @@ class TestBaby:
 
         queryset = Baby.objects.all()
         queryset = Baby.prefetch_type_object(queryset)
-        breakpoint()
         queryset = Baby.load_user(queryset)
         assert hasattr(queryset[0], 'type_object')
