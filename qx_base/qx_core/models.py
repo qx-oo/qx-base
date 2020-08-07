@@ -24,23 +24,29 @@ def load_queryset_type_object(queryset, field, model, _type='',
     }
 
 
-def load_set_queryset_object(queryset, model, field_id, set_field,
+def load_set_queryset_object(queryset, model, field_map: dict,
                              select_related=[]):
     """
     Load model queryset by obj_id
         queryset: model queryset
         model: django model
-        field_id: queryset model field
-        set_field: set field
+        field_map: get and set field_map,
+                   example {'user1_id': 'user1', 'user2_id': 'user2'}
     """
-    ids = [getattr(ins, field_id) for ins in queryset]
+    ids = [
+        getattr(ins, field_id)
+        for ins in queryset
+        for field_id in field_map.keys()
+        if getattr(ins, field_id)
+    ]
     data = {
         ins.id: ins
         for ins in list(model.objects.select_related(
             *select_related).filter(id__in=ids))
     }
     for ins in queryset:
-        setattr(ins, set_field, data.get(getattr(ins, field_id)))
+        for field_id, set_field in field_map.items():
+            setattr(ins, set_field, data.get(getattr(ins, field_id)))
     return queryset
 
 
