@@ -3,7 +3,7 @@ from setuptools import find_packages, setup
 
 setup(
     name='qx-base',
-    version='1.0.5',
+    version='1.0.6',
     author='Shawn',
     author_email='q-x64@live.com',
     url='https://github.com/qx-oo/qx-base/',
@@ -14,8 +14,8 @@ setup(
         'Django >= 2.2',
         'djangorestframework >= 3.10',
         'djangorestframework-jwt >= 1.11.0',
-        'PyCryptodome >= 3.9.8',
-        'redis >= 3.5.3',
+        'PyCryptodome >= 3.9',
+        'redis >= 3.3',
         'psycopg2 >= 2.8.3',
     ],
     python_requires='>=3.7',
