@@ -5,7 +5,7 @@ from django.db import transaction
 from ..qx_rest.exceptions import SerializerFieldError
 from ..qx_core.tools import DictInstance
 from ..settings import base_settings
-from .tools import CodeMsg
+from .tools import CodeMsg, generate_random_account
 # from .models import _UserInfo as UserInfo
 
 
@@ -57,7 +57,11 @@ class SendCodeSerializer(serializers.Serializer):
                 raise serializers.ValidationError('请登录后发送')
         elif _type in ['signup', 'signin']:
             mobile = validated_data.pop('mobile', None)
+            if mobile and User.objects.filter(mobile=mobile).exists():
+                raise serializers.ValidationError('手机号已注册')
             email = validated_data.pop('email', None)
+            if email and User.objects.filter(email=email).exists():
+                raise serializers.ValidationError('邮箱已注册')
         elif _type == 'changepwd':
             mobile = validated_data.pop('mobile', None)
             email = validated_data.pop('email', None)
@@ -83,6 +87,8 @@ class SendCodeSerializer(serializers.Serializer):
 
 class SignupSerializer(serializers.Serializer):
 
+    account = serializers.CharField(
+        label="账号(手机号,邮箱)", max_length=50, required=False,)
     mobile = serializers.CharField(
         label="手机号", max_length=20, required=False)
     email = serializers.CharField(
@@ -99,18 +105,18 @@ class SignupSerializer(serializers.Serializer):
     def get_token(self, instance):
         return instance.get_new_token()
 
-    def _create_user(self, mobile, email, password, userinfo):
-        instance = User.objects.create_user(mobile, email, password)
+    def _create_user(self, account, mobile, email, password, userinfo):
+        instance = User.objects.create_user(account, mobile, email, password)
         # userinfo
         serializer = base_settings.USERINFO_SERIALIZER_CLASS(data=userinfo)
         serializer.is_valid(raise_exception=True)
         serializer.save(user=instance)
         return instance
 
-    def _check_user_exists(self, email, mobile):
-        account = email or mobile
+    def _check_user_exists(self, email, mobile, account):
+        query = email or mobile
         if User.objects.filter(
-                Q(mobile=account) | Q(email=account) | Q(account=account)
+                Q(mobile=query) | Q(email=query)
         ).exists():
             if email:
                 raise SerializerFieldError(
@@ -118,9 +124,13 @@ class SignupSerializer(serializers.Serializer):
             else:
                 raise SerializerFieldError(
                     '用户已存在', field='mobile')
+        if account:
+            raise SerializerFieldError(
+                '用户已存在', field='account')
 
     def create(self, validated_data):
         code = validated_data.pop('code', None)
+        account = validated_data.pop('account', None)
         mobile = validated_data.pop('mobile', None)
         email = validated_data.pop('email', None)
         password = validated_data.pop('password', None)
@@ -128,7 +138,10 @@ class SignupSerializer(serializers.Serializer):
         if not email and not mobile:
             raise serializers.ValidationError('email and mobile empty')
 
-        self._check_user_exists(email, mobile)
+        self._check_user_exists(email, mobile, account)
+
+        if not account:
+            account = generate_random_account()
 
         object_id = email or mobile
         _code = CodeMsg(
@@ -140,7 +153,7 @@ class SignupSerializer(serializers.Serializer):
         # creaste user
         with transaction.atomic():
             instance = self._create_user(
-                mobile, email, password, userinfo)
+                account, mobile, email, password, userinfo)
         return instance
 
     class Meta:
@@ -150,7 +163,7 @@ class SignupSerializer(serializers.Serializer):
 class SigninSerializer(serializers.Serializer):
 
     account = serializers.CharField(
-        label="账号", max_length=50,)
+        label="账号(手机号,邮箱)", max_length=50)
     password = serializers.CharField(
         label="密码", max_length=50, required=False, write_only=True)
     code = serializers.CharField(
@@ -171,7 +184,7 @@ class SigninSerializer(serializers.Serializer):
                 '密码不能为空', field='password')
 
         user = User.objects.filter(
-            Q(mobile=account) | Q(email=account)).first()
+            Q(mobile=account) | Q(email=account) | Q(account=account)).first()
         if not user:
             raise SerializerFieldError(
                 '用户不存在', field='account')
@@ -255,3 +268,8 @@ class UpdateEmailSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('email', 'code',)
+
+
+class AccountExistSerializer(serializers.Serializer):
+
+    exists = serializers.BooleanField(label="是否存在")

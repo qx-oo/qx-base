@@ -1,3 +1,5 @@
+from string import ascii_lowercase, digits
+from random import choice
 import time
 import random
 from django.contrib.auth import get_user_model
@@ -84,3 +86,19 @@ class CodeMsg():
 
     def del_code(self):
         return self.cache.hdel(self.key)
+
+
+def generate_random_account(length=16, chars=ascii_lowercase+digits, split=4,
+                            delimiter='-'):
+    account = ''.join([choice(chars) for i in range(length)])
+
+    if split:
+        account = delimiter.join([account[start:start+split]
+                                  for start in range(0, len(account), split)])
+    try:
+        User = get_user_model()
+        User.objects.get(account=account)
+        return generate_random_account(
+            length=length, chars=chars, split=split, delimiter=delimiter)
+    except User.DoesNotExist:
+        return account

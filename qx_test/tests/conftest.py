@@ -14,6 +14,7 @@ def redis_flushall():
 def user_data_init(db):
     for i in range(10):
         user = User.objects.create_user(
+            account="1886666888%s" % i,
             mobile="1886666888%s" % i,
             email=None,
             password="12345678",

@@ -13,6 +13,7 @@ from .serializers import (
     SendCodeSerializer,
     UpdateMobileSerializer,
     UpdateEmailSerializer,
+    AccountExistSerializer,
 )
 
 # Create your views here.
@@ -24,7 +25,7 @@ UserInfoSerializer = base_settings.USERINFO_SERIALIZER_CLASS
 
 class UserPermission(BasePermission):
     def has_permission(self, request, view):
-        if view.action in ['signin', 'signup', 'send_code']:
+        if view.action in ['signin', 'signup', 'send_code', 'account_exist']:
             return AllowAny().has_permission(request, view)
         return IsAuthenticated().has_permission(request, view)
 
@@ -61,6 +62,11 @@ class UserViewSet(viewsets.GenericViewSet,
         更新邮箱
 
         更新邮箱
+
+    account_exist:
+        账号是否被注册
+
+        账号是否被注册, 参数: account=xxxxx
     '''
     permission_classes = (
         UserPermission,
@@ -78,6 +84,8 @@ class UserViewSet(viewsets.GenericViewSet,
             return UpdateMobileSerializer
         elif self.action == 'update_email':
             return UpdateEmailSerializer
+        elif self.action == 'account_exist':
+            return AccountExistSerializer
         return {}
 
     @decorators.action(methods=['post'], url_path='signup', detail=False)
@@ -103,6 +111,16 @@ class UserViewSet(viewsets.GenericViewSet,
         instance = request.user
         return ApiResponse(data=self._update(
             request, instance, *args, **kwargs))
+
+    @decorators.action(methods=['get'], url_path='account-exist', detail=False)
+    def account_exist(self, request, *args, **kwargs):
+        account = request.query_params.get('account')
+        exists = False
+        if account:
+            exists = User.objects.filter(account=account).exists()
+        return ApiResponse(data={
+            'exists': exists
+        })
 
 
 class UserInfoViewSet(viewsets.GenericViewSet,

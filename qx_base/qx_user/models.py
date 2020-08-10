@@ -15,15 +15,14 @@ class UserManager(BaseUserManager):
     User Manager
     """
 
-    def _create_user(self, mobile: str, email: str, password: str,
-                     is_staff: bool, is_superuser: bool,
+    def _create_user(self, account: str, mobile: str, email: str,
+                     password: str, is_staff: bool, is_superuser: bool,
                      **extra_fields) -> "QxUser":
         """
         create user by and mobile
         """
         if not mobile and not email:
             raise ValueError('mobile or email is null')
-        account = mobile or email
         user = self.model(mobile=mobile,
                           account=account,
                           is_active=True,
@@ -33,10 +32,10 @@ class UserManager(BaseUserManager):
         user.save()
         return user
 
-    def create_user(self, mobile: str, email: str, password: str = None,
-                    **extra_fields) -> "QxUser":
-        return self._create_user(mobile, email, password, False, False,
-                                 **extra_fields)
+    def create_user(self, account, mobile: str, email: str,
+                    password: str = None, **extra_fields) -> "QxUser":
+        return self._create_user(account, mobile, email, password, False,
+                                 False, **extra_fields)
 
     def create_superuser(self, account: str, password: str,
                          **extra_fields) -> "QxUser":
