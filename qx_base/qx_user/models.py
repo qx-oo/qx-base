@@ -48,7 +48,6 @@ class QxUser_Meta:
     verbose_name = '用户'
     verbose_name_plural = verbose_name
     swappable = 'AUTH_USER_MODEL'
-    unique_together = (('mobile', 'email',),)
 
 
 class QxUser(PermissionsMixin, AbstractBaseModel):
@@ -60,10 +59,10 @@ class QxUser(PermissionsMixin, AbstractBaseModel):
         verbose_name='账号', max_length=255, unique=True, db_index=True)
     mobile = models.CharField(
         max_length=25, null=True, blank=True,
-        verbose_name="手机号", db_index=True)
+        verbose_name="手机号", db_index=True, unique=True)
     email = models.EmailField(
         verbose_name="Email", null=True, blank=True,
-        db_index=True)
+        db_index=True, unique=True)
     is_active = models.BooleanField(
         verbose_name="Active", default=True)
     is_staff = models.BooleanField(

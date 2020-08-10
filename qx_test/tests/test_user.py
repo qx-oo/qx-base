@@ -1,8 +1,49 @@
 import pytest
 import json
+import django
 from qx_base.qx_user.viewsets import UserViewSet, UserInfoViewSet
 from qx_base.qx_user.tools import CodeMsg
 from qx_test.user.models import User, Baby
+
+
+class TestUserModel:
+
+    @pytest.mark.django_db
+    def test_user_unique(self):
+        User.objects.create(
+            account='123456',
+            mobile="123456",
+            email=None,
+        )
+        User.objects.create(
+            account='123457',
+            mobile="123457",
+            email=None,
+        )
+        User.objects.create(
+            account='123459',
+            mobile=None,
+            email='123456',
+        )
+        User.objects.create(
+            account='123460',
+            mobile=None,
+            email=None,
+        )
+        User.objects.create(
+            account='123461',
+            mobile=None,
+            email=None,
+        )
+        try:
+            User.objects.create(
+                account='123458',
+                mobile="123456",
+                email=None,
+            )
+            assert False
+        except django.db.IntegrityError:
+            assert True
 
 
 class TestUserViewSet:
