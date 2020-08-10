@@ -121,6 +121,18 @@ class TestUserViewSet:
         data = json.loads(response.content)
         assert data['data']['token']
 
+    @pytest.mark.django_db
+    def test_account_exists(self, rf, user_data_init):
+
+        url = '{}/user/account-exists/?account={}'.format(
+            self.url, '18866668880')
+
+        request = rf.get(url)
+        response = self.viewset.as_view({'get': 'account_exists'})(request)
+        assert response.status_code == 200
+        data = json.loads(response.content)
+        assert data['data']['exists']
+
 
 class TestUserInfoViewSet:
 

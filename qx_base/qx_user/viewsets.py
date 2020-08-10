@@ -25,7 +25,7 @@ UserInfoSerializer = base_settings.USERINFO_SERIALIZER_CLASS
 
 class UserPermission(BasePermission):
     def has_permission(self, request, view):
-        if view.action in ['signin', 'signup', 'send_code', 'account_exist']:
+        if view.action in ['signin', 'signup', 'send_code', 'account_exists']:
             return AllowAny().has_permission(request, view)
         return IsAuthenticated().has_permission(request, view)
 
@@ -63,7 +63,7 @@ class UserViewSet(viewsets.GenericViewSet,
 
         更新邮箱
 
-    account_exist:
+    account_exists:
         账号是否被注册
 
         账号是否被注册, 参数: account=xxxxx
@@ -84,7 +84,7 @@ class UserViewSet(viewsets.GenericViewSet,
             return UpdateMobileSerializer
         elif self.action == 'update_email':
             return UpdateEmailSerializer
-        elif self.action == 'account_exist':
+        elif self.action == 'account_exists':
             return AccountExistSerializer
         return {}
 
@@ -112,8 +112,9 @@ class UserViewSet(viewsets.GenericViewSet,
         return ApiResponse(data=self._update(
             request, instance, *args, **kwargs))
 
-    @decorators.action(methods=['get'], url_path='account-exist', detail=False)
-    def account_exist(self, request, *args, **kwargs):
+    @decorators.action(methods=['get'], url_path='account-exists',
+                       detail=False)
+    def account_exists(self, request, *args, **kwargs):
         account = request.query_params.get('account')
         exists = False
         if account:
