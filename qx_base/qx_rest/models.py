@@ -1,3 +1,4 @@
+from django.db import models
 from ..qx_core.storage import RedisClient
 from ..qx_core.models import AbstractBaseModel
 from .caches import RestCacheKey
@@ -5,7 +6,7 @@ from .caches import RestCacheKey
 # Create your models here.
 
 
-class RestCacheModel(AbstractBaseModel):
+class RestModelMixin(models.Model):
     '''
     重置model的save和delete方法, 可以同步model的rest接口对应缓存
 
@@ -152,6 +153,12 @@ class RestCacheModel(AbstractBaseModel):
         for func in cache_func:
             func()
         return ret
+
+    class Meta:
+        abstract = True
+
+
+class RestModel(AbstractBaseModel, RestModelMixin):
 
     class Meta:
         abstract = True

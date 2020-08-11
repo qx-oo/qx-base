@@ -7,6 +7,7 @@ from django.contrib.auth.models import (
     PermissionsMixin,
 )
 from ..qx_core.models import AbstractBaseModel
+from ..qx_rest.models import RestModel
 from .auth import UserJWT
 
 
@@ -111,7 +112,7 @@ class QxUser(PermissionsMixin, AbstractBaseModel):
         abstract = True
 
 
-class QxUserInfo(models.Model):
+class QxUserInfo(RestModel):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, primary_key=True,
         verbose_name="用户")

@@ -64,7 +64,7 @@ User models.py:
 
         Meta = QxUser_Meta
 
-    class UserInfo(QxUserInfo, RestCacheModel):
+    class UserInfo(QxUserInfo):
     name = models.CharField(
         verbose_name="Name", default="", max_length=50)
     age = models.IntegerField(
