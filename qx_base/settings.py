@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.apps import apps
 from django.utils.module_loading import import_string
 from .qx_core.tools import DictInstance
 
@@ -7,7 +8,7 @@ QX_BASE_SETTINGS = {
     'SEND_MOBILE_MSG_CLASS': "qx_base.qx_user.mixins.SendMobileMsgMixin",
     'SEND_EMAIL_MSG_CLASS': "qx_base.qx_user.mixins.SendEmailMsgMixin",
     'USERLASTACCESS_CLASS': "qx_base.qx_user.tools.UserLastAccessTime",
-    'USERINFO_MODEL_CLASS': None,
+    'USERINFO_MODEL': None,
     'USERINFO_SERIALIZER_CLASS': None,
 }
 
@@ -25,6 +26,11 @@ def get_attr(key, val):
             return import_string(val)
         else:
             raise ImportError('Settings {} import error.'.format(key))
+    elif key.endswith('_MODEL'):
+        if val:
+            return apps.get_model(val)
+        else:
+            raise ImportError('Settings model {} import error.'.format(key))
     return val
 
 

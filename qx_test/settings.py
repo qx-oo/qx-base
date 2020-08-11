@@ -194,6 +194,6 @@ ElBD6PTOifsl8TBQ2cQhPC//+/oP9wJlbXO0+G4VPSuM
 QX_BASE_SETTINGS = {
     'SEND_MOBILE_MSG_CLASS': "qx_test.msg.TestMsg",
     'SEND_EMAIL_MSG_CLASS': "qx_test.msg.TestMsg",
-    'USERINFO_MODEL_CLASS': "qx_test.user.models.UserInfo",
+    'USERINFO_MODEL': "user.UserInfo",
     'USERINFO_SERIALIZER_CLASS': "qx_test.user.serializers.UserinfoSerializer",  # noqa
 }

@@ -19,7 +19,7 @@ from .serializers import (
 # Create your views here.
 
 
-UserInfo = base_settings.USERINFO_MODEL_CLASS
+UserInfo = base_settings.USERINFO_MODEL
 UserInfoSerializer = base_settings.USERINFO_SERIALIZER_CLASS
 
 
