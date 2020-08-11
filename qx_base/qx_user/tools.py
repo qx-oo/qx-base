@@ -89,16 +89,30 @@ class CodeMsg():
 
 
 def generate_random_account(length=16, chars=ascii_lowercase+digits, split=4,
-                            delimiter='-'):
-    account = ''.join([choice(chars) for i in range(length)])
+                            delimiter='-', depth=1):
+    if depth > 50:
+        return None
+    User = get_user_model()
+
+    account_list = set()
 
     if split:
-        account = delimiter.join([account[start:start+split]
-                                  for start in range(0, len(account), split)])
-    try:
-        User = get_user_model()
-        User.objects.get(account=account)
+        for index in range(5):
+            account = ''.join([choice(chars) for i in range(length)])
+            account = delimiter.join([
+                account[start:start+split]
+                for start in range(0, len(account), split)
+            ])
+            account_list.add(account)
+    else:
+        raise ValueError('split error: {}'.format(split))
+
+    exist_list = list(User.objects.filter(
+        account__in=account_list).values_list('account', flat=True))
+    diff_list = account_list - set(exist_list)
+    if diff_list:
+        return diff_list.pop()
+    else:
         return generate_random_account(
-            length=length, chars=chars, split=split, delimiter=delimiter)
-    except User.DoesNotExist:
-        return account
+            length=length, chars=chars, split=split, delimiter=delimiter,
+            depth=depth + 1)

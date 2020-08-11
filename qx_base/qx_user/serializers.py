@@ -88,7 +88,7 @@ class SendCodeSerializer(serializers.Serializer):
 class SignupSerializer(serializers.Serializer):
 
     account = serializers.CharField(
-        label="账号(手机号,邮箱)", max_length=50, required=False,)
+        label="账号", max_length=20, required=False,)
     mobile = serializers.CharField(
         label="手机号", max_length=20, required=False)
     email = serializers.CharField(
