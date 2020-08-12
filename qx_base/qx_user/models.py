@@ -105,6 +105,18 @@ class QxUser(PermissionsMixin, AbstractBaseModel):
     def clear_cache(self):
         self.user.userinfo.clear_cache()
 
+    @classmethod
+    def query_user(cls, account, mobile, email):
+        if account:
+            user = cls.objects.filter(account=account).first()
+        elif mobile:
+            user = cls.objects.filter(mobile=mobile).first()
+        elif email:
+            user = cls.objects.filter(email=email).first()
+        else:
+            return None
+        return user
+
     def __str__(self):
         return self.account
 

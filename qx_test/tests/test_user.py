@@ -71,7 +71,7 @@ class TestUserViewSet:
         url = '{}/user/signin/'.format(self.url)
 
         data = {
-            "account": "18866668888",
+            "mobile": "18866668888",
             "password": "12345678"
         }
         request = rf.post(

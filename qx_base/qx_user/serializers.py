@@ -163,7 +163,11 @@ class SignupSerializer(serializers.Serializer):
 class SigninSerializer(serializers.Serializer):
 
     account = serializers.CharField(
-        label="账号(手机号,邮箱)", max_length=50)
+        label="账号", max_length=50, required=False)
+    mobile = serializers.CharField(
+        label="手机号", max_length=20, required=False)
+    email = serializers.CharField(
+        label="邮箱", max_length=50, required=False)
     password = serializers.CharField(
         label="密码", max_length=50, required=False, write_only=True)
     code = serializers.CharField(
@@ -175,16 +179,21 @@ class SigninSerializer(serializers.Serializer):
         return instance.get_new_token()
 
     def create(self, validated_data):
-        account = validated_data['account']
+        account = validated_data.get('account')
+        mobile = validated_data.get('mobile')
+        email = validated_data.get('email')
         password = validated_data.get('password')
         code = validated_data.get('code')
+
+        if not account and not mobile and not email:
+            raise SerializerFieldError(
+                '账号不能为空', field='account')
 
         if not password and not code:
             raise SerializerFieldError(
                 '密码不能为空', field='password')
 
-        user = User.objects.filter(
-            Q(mobile=account) | Q(email=account) | Q(account=account)).first()
+        user = User.query_user(account, mobile, email)
         if not user:
             raise SerializerFieldError(
                 '用户不存在', field='account')
