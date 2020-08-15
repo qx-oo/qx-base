@@ -193,10 +193,10 @@ class SigninSerializer(serializers.Serializer):
             raise SerializerFieldError(
                 '密码不能为空', field='password')
 
-        user = User.query_user(account, mobile, email)
+        user, field = User.query_user(account, mobile, email)
         if not user:
             raise SerializerFieldError(
-                '用户不存在', field='account')
+                '用户不存在', field=field)
 
         if password:
             auth_user = authenticate(account=user.account, password=password)

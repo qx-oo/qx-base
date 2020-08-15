@@ -109,13 +109,15 @@ class QxUser(PermissionsMixin, AbstractBaseModel):
     def query_user(cls, account, mobile, email):
         if account:
             user = cls.objects.filter(account=account).first()
+            return user, 'account'
         elif mobile:
             user = cls.objects.filter(mobile=mobile).first()
+            return user, 'mobile'
         elif email:
             user = cls.objects.filter(email=email).first()
+            return user, 'email'
         else:
-            return None
-        return user
+            return None, ''
 
     def __str__(self):
         return self.account
