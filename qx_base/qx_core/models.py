@@ -72,6 +72,12 @@ class ContentTypeRelated(models.Model):
         class Meta:
             verbose_name = 'Message'
             verbose_name_plural = verbose_name
+
+    query:
+        queryset = Message.prefetch_type_object(queryset)
+    set object:
+        message.set_type_object(user)
+        message.save()
     """
 
     type = models.CharField(
@@ -97,7 +103,6 @@ class ContentTypeRelated(models.Model):
             data.setdefault(ins.type, []).append(ins)
         objs_data = {}
         for _type, _queryset in data.items():
-            # TODO:
             model = cls.type_map_model.get(_type)
             if model:
                 objs_data.update(load_queryset_type_object(
