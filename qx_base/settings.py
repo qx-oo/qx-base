@@ -4,22 +4,6 @@ from django.utils.module_loading import import_string
 from .qx_core.tools import DictInstance
 
 
-QX_BASE_SETTINGS = {
-    'SEND_MOBILE_MSG_CLASS': "qx_base.qx_user.mixins.SendMobileMsgMixin",
-    'SEND_EMAIL_MSG_CLASS': "qx_base.qx_user.mixins.SendEmailMsgMixin",
-    'USERLASTACCESS_CLASS': "qx_base.qx_user.tools.UserLastAccessTime",
-    'USERINFO_MODEL': None,
-    'USERINFO_SERIALIZER_CLASS': None,
-}
-
-_b_settings = QX_BASE_SETTINGS
-
-_settings = getattr(settings, 'QX_BASE_SETTINGS', QX_BASE_SETTINGS)
-
-if _settings:
-    _b_settings.update(_settings)
-
-
 def get_attr(key, val):
     if key.endswith('_CLASS'):
         if val:
@@ -34,6 +18,27 @@ def get_attr(key, val):
     return val
 
 
-base_settings = DictInstance(**QX_BASE_SETTINGS)
-for key, val in _b_settings.items():
-    setattr(base_settings, key, get_attr(key, val))
+def get_settings(attr_name, defaults):
+    _b_settings = defaults
+
+    _settings = getattr(settings, attr_name,
+                        defaults)
+
+    if _settings:
+        _b_settings.update(_settings)
+
+    ret_settings = DictInstance(**defaults)
+    for key, val in _b_settings.items():
+        setattr(ret_settings, key, get_attr(key, val))
+    return ret_settings
+
+
+QX_BASE_SETTINGS = {
+    'SEND_MOBILE_MSG_CLASS': "qx_base.qx_user.mixins.SendMobileMsgMixin",
+    'SEND_EMAIL_MSG_CLASS': "qx_base.qx_user.mixins.SendEmailMsgMixin",
+    'USERLASTACCESS_CLASS': "qx_base.qx_user.tools.UserLastAccessTime",
+    'USERINFO_MODEL': None,
+    'USERINFO_SERIALIZER_CLASS': None,
+}
+
+base_settings = get_settings('QX_BASE_SETTINGS', QX_BASE_SETTINGS)
