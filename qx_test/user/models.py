@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser
-from qx_base.qx_core.models import ContentTypeRelated, load_set_queryset_object
+from qx_base.qx_core.models import (
+    ContentTypeRelated, load_set_queryset_object, ModelCountMixin
+)
 from qx_base.qx_user.models import QxUser, QxUser_Meta, QxUserInfo
 from qx_base.qx_rest.models import RestModel
 
@@ -48,4 +50,18 @@ class Baby(ContentTypeRelated, RestModel):
 
     class Meta:
         verbose_name = 'Baby'
+        verbose_name_plural = verbose_name
+
+
+class Post(RestModel, ModelCountMixin):
+
+    name = models.CharField(
+        verbose_name="名称", max_length=50)
+    star_count = models.PositiveIntegerField(
+        verbose_name="点赞数", default=0)
+
+    model_count_field_name = 'star_count'
+
+    class Meta:
+        verbose_name = 'Post'
         verbose_name_plural = verbose_name

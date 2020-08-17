@@ -1,7 +1,9 @@
+import json
 from django.apps import apps
 from django.db import models
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
+from .storage import RedisClient
 
 # Create your models here.
 
@@ -125,3 +127,127 @@ class ContentTypeRelated(models.Model):
 
     class Meta:
         abstract = True
+
+
+class ModelCountMixin():
+    """
+    Django model integer field count, cache to redis and sync to db.
+    ---
+    default timeout 3 times to db
+
+    example:
+
+        class TestModel(models.Model, ModelCountMixin):
+            star_count = models.PositiveIntegerField(
+                verbose_name="点赞数", default=0)
+            ...
+            model_count_field_name = 'star_count'
+            ...
+
+        test = TestModel.objects.create(star_count=2)
+        test.load_field_count()
+        test.add_field_count(10)
+    """
+
+    @classmethod
+    def model_count_key(cls):
+        return "qx_base:{}:{}".format(
+            cls.__name__.lower(), cls.model_count_field_name.lower())
+
+    @property
+    def model_count_field_name(self):
+        raise NotImplementedError()
+
+    @classmethod
+    def prefetch_field_count(cls, ids: list):
+        """
+        load not in redis instance to redis
+        """
+        client = RedisClient().get_conn()
+        key = cls.model_count_key()
+        field = cls.model_count_field_name
+        vals = client.hmget(key, ids)
+
+        pre_ids = [
+            _id
+            for _id, val in zip(ids, vals)
+            if val is None
+        ]
+        save_data = {
+            _id: [val, 3]
+            for _id, val in cls.objects.filter(
+                id__in=pre_ids).values_list('id', field)
+        }
+        if save_data:
+            cls.hset(key, save_data)
+
+    @classmethod
+    def sync_field_count_to_db(cls):
+        """
+        Sync redis data to db
+        """
+        client = RedisClient().get_conn()
+        key = cls.model_count_key()
+        field = cls.model_count_field_name
+
+        data = client.hgetall(key)
+        new_data = {}
+        for id, val in data.items():
+            num, timeout = json.loads(val)
+            cls.objects.filter(id=int(id)).update(**{field: num})
+            if timeout > 0:
+                new_data[id] = json.dumps([num, timeout - 1])
+        client.delete(key)
+        if new_data:
+            # TODO:
+            # client.hset(key, mapping=new_data)
+            client.hmset(key, new_data)
+
+    @classmethod
+    def _load_model_field_value(cls, id):
+        ins = cls.objects.filter(id=id).first()
+        if not ins:
+            return None
+        return getattr(ins, cls.model_count_field_name)
+
+    @classmethod
+    def _load_field_count(cls, id):
+        """
+        load field num
+        """
+        key = cls.model_count_key()
+        client = RedisClient().get_conn()
+
+        data = client.hget(key, id)
+
+        if data is None:
+
+            num = cls._load_model_field_value(id)
+            if num is None:
+                return None, None
+            client.hset(key, id, json.dumps([num, 3]))
+            return int(num), 3
+        else:
+            num, timeout = json.loads(data)
+            return int(num), timeout
+
+    @classmethod
+    def load_field_count(cls, id):
+        num, _ = cls._load_field_count(id)
+        return num
+
+    @classmethod
+    def add_field_count(cls, id, num):
+        """
+        add field num
+        """
+        key = cls.model_count_key()
+        client = RedisClient().get_conn()
+
+        origin_num, timeout = cls._load_field_count(id)
+        if not origin_num:
+            return None
+        num = origin_num + num
+
+        client.hset(key, id, json.dumps([num, timeout + 1]))
+        return num
