@@ -133,7 +133,8 @@ class ModelCountMixin():
     """
     Django model integer field count, cache to redis and sync to db.
     ---
-    default timeout 3 times to db
+    model_count_timeout: default timeout times to db
+    model_count_day_only: every day once
 
     example:
 
@@ -144,19 +145,25 @@ class ModelCountMixin():
             model_count_field_name = 'star_count'
             ...
 
+            model_count_timeout = 1
+            model_count_day_only = False
+
         test = TestModel.objects.create(star_count=2)
         test.load_field_count()
         test.add_field_count(10)
     """
 
+    @property
+    def model_count_field_name(self):
+        raise NotImplementedError()
+
+    model_count_timeout = 3
+    model_count_day_only = False
+
     @classmethod
     def model_count_key(cls):
         return "qx_base:{}:{}".format(
             cls.__name__.lower(), cls.model_count_field_name.lower())
-
-    @property
-    def model_count_field_name(self):
-        raise NotImplementedError()
 
     @classmethod
     def prefetch_field_count(cls, ids: list):
@@ -174,7 +181,7 @@ class ModelCountMixin():
             if val is None
         ]
         save_data = {
-            _id: [val, 3]
+            _id: [val, cls.model_count_timeout]
             for _id, val in cls.objects.filter(
                 id__in=pre_ids).values_list('id', field)
         }
@@ -193,10 +200,10 @@ class ModelCountMixin():
         data = client.hgetall(key)
         new_data = {}
         for id, val in data.items():
-            num, timeout = json.loads(val)
+            num, timeout, unique = json.loads(val)
             cls.objects.filter(id=int(id)).update(**{field: num})
             if timeout > 0:
-                new_data[id] = json.dumps([num, timeout - 1])
+                new_data[id] = json.dumps([num, timeout - 1, unique])
         client.delete(key)
         if new_data:
             # TODO:
@@ -225,15 +232,16 @@ class ModelCountMixin():
             num = cls._load_model_field_value(id)
             if num is None:
                 return None, None
-            client.hset(key, id, json.dumps([num, 3]))
-            return int(num), 3
+            client.hset(key, id, json.dumps(
+                [num, cls.model_count_timeout, '']))
+            return int(num), cls.model_count_timeout, ''
         else:
-            num, timeout = json.loads(data)
-            return int(num), timeout
+            num, timeout, unique = json.loads(data)
+            return int(num), timeout, unique
 
     @classmethod
     def load_field_count(cls, id):
-        num, _ = cls._load_field_count(id)
+        num, _, _ = cls._load_field_count(id)
         return num
 
     @classmethod
@@ -244,10 +252,18 @@ class ModelCountMixin():
         key = cls.model_count_key()
         client = RedisClient().get_conn()
 
-        origin_num, timeout = cls._load_field_count(id)
+        only = timezone.localtime(
+            timezone.now()).date().strftime("%Y%m%d")
+
+        origin_num, timeout, unique = cls._load_field_count(id)
+
         if not origin_num:
             return None
+
+        if cls.model_count_day_only and only == unique:
+            return origin_num
+
         num = origin_num + num
 
-        client.hset(key, id, json.dumps([num, timeout + 1]))
+        client.hset(key, id, json.dumps([num, timeout + 1, only]))
         return num
