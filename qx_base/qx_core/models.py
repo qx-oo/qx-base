@@ -175,18 +175,23 @@ class ModelCountMixin():
         field = cls.model_count_field_name
         vals = client.hmget(key, ids)
 
-        pre_ids = [
-            _id
-            for _id, val in zip(ids, vals)
-            if val is None
-        ]
+        pre_ids = []
+        ret = {}
+        for _id, val in zip(ids, vals):
+            if val is None:
+                pre_ids.append(_id)
+            else:
+                ret[_id] = val
+
         save_data = {
-            _id: [val, cls.model_count_timeout]
+            _id: json.dumps([val, cls.model_count_timeout, ''])
             for _id, val in cls.objects.filter(
                 id__in=pre_ids).values_list('id', field)
         }
         if save_data:
-            cls.hset(key, save_data)
+            client.hmset(key, save_data)
+        save_data.update(ret)
+        return save_data
 
     @classmethod
     def sync_field_count_to_db(cls):
@@ -243,6 +248,14 @@ class ModelCountMixin():
     def load_field_count(cls, id):
         num, _, _ = cls._load_field_count(id)
         return num
+
+    @classmethod
+    def batch_load_field_count(cls, ids):
+        data = cls.prefetch_field_count(ids)
+        return {
+            id: json.loads(item)[0]
+            for id, item in data.items()
+        }
 
     @classmethod
     def add_field_count(cls, id, num):

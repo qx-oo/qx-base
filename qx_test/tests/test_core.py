@@ -28,6 +28,10 @@ class TestModelCountMixin:
         num = Post.load_field_count(post.id)
         assert num == 8
 
+        post3 = Post.objects.filter(name=str(8)).first()
+        ret = Post.batch_load_field_count([post.id, post2.id, post3.id])
+        assert len(ret) > 1
+
     @pytest.mark.django_db
     def test_only(self, redis_flushall):
         Post.model_count_day_only = True
