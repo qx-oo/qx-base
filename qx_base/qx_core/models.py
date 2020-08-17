@@ -270,7 +270,7 @@ class ModelCountMixin():
 
         origin_num, timeout, unique = cls._load_field_count(id)
 
-        if not origin_num:
+        if origin_num is None:
             return None
 
         if cls.model_count_day_only and only == unique:
