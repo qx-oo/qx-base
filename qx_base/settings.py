@@ -6,12 +6,16 @@ from .qx_core.tools import DictInstance
 
 def get_attr(key, val):
     if key.endswith('_CLASS'):
-        if val:
+        if val is None:
+            return None
+        elif val:
             return import_string(val)
         else:
             raise ImportError('Settings {} import error.'.format(key))
     elif key.endswith('_MODEL'):
-        if val:
+        if val is None:
+            return None
+        elif val:
             return apps.get_model(val)
         else:
             raise ImportError('Settings model {} import error.'.format(key))

@@ -3,7 +3,7 @@ from setuptools import find_packages, setup
 
 setup(
     name='qx-base',
-    version='1.0.7',
+    version='1.0.8',
     author='Shawn',
     author_email='q-x64@live.com',
     url='https://github.com/qx-oo/qx-base/',
