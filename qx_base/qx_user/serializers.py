@@ -1,5 +1,4 @@
 from rest_framework import serializers, exceptions
-from django.db.models import Q
 from django.contrib.auth import authenticate, get_user_model
 from django.db import transaction
 from ..qx_rest.exceptions import SerializerFieldError
