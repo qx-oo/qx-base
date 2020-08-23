@@ -114,19 +114,18 @@ class SignupSerializer(serializers.Serializer):
         return instance
 
     def _check_user_exists(self, email, mobile, account):
-        query = email or mobile
-        if User.objects.filter(
-                Q(mobile=query) | Q(email=query)
-        ).exists():
-            if email:
+        if email:
+            if User.objects.filter(email=email).exists():
                 raise SerializerFieldError(
                     '用户已存在', field='email')
-            else:
+        if mobile:
+            if User.objects.filter(mobile=mobile).exists():
                 raise SerializerFieldError(
                     '用户已存在', field='mobile')
         if account:
-            raise SerializerFieldError(
-                '用户已存在', field='account')
+            if User.objects.filter(account=account).exists():
+                raise SerializerFieldError(
+                    '用户已存在', field='account')
 
     def create(self, validated_data):
         code = validated_data.pop('code', None)
