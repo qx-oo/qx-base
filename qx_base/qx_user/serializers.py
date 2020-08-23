@@ -126,7 +126,7 @@ class SignupSerializer(serializers.Serializer):
                 raise SerializerFieldError(
                     '用户已存在', field='account')
 
-    def create(self, validated_data):
+    def create_user(self, validated_data):
         code = validated_data.pop('code', None)
         account = validated_data.pop('account', None)
         mobile = validated_data.pop('mobile', None)
@@ -149,10 +149,13 @@ class SignupSerializer(serializers.Serializer):
                 '验证码错误', field='code')
 
         # creaste user
-        with transaction.atomic():
-            instance = self._create_user(
-                account, mobile, email, password, userinfo)
+        instance = self._create_user(
+            account, mobile, email, password, userinfo)
         return instance
+
+    def create(self, validated_data):
+        with transaction.atomic():
+            return self.create_user(validated_data)
 
     class Meta:
         model = User
