@@ -65,14 +65,14 @@ User models.py:
         Meta = QxUser_Meta
 
     class UserInfo(QxUserInfo):
-    name = models.CharField(
-        verbose_name="Name", default="", max_length=50)
-    age = models.IntegerField(
-        verbose_name="Age")
+        name = models.CharField(
+            verbose_name="Name", default="", max_length=50)
+        age = models.IntegerField(
+            verbose_name="Age")
 
-    class Meta:
-        verbose_name = 'UserInfo'
-        verbose_name_plural = verbose_name
+        class Meta:
+            verbose_name = 'UserInfo'
+            verbose_name_plural = verbose_name
 
 User urls.py
 
