@@ -89,6 +89,23 @@ User urls.py
     ]
 
 
+Celery:
+
+    QX_BASE_SETTINGS = {
+        'USERLASTACCESS_CLASS': "qx_base.qx_user.tools.UserLastAccessTime",
+    }
+
+    CELERY_TASK_ROUTES = {
+        "qx_base.qx_user.tasks.UserAccessTimeTask": {}
+    }
+    CELERY_BEAT_SCHEDULE = {
+        'UserAccessTimeTask': {
+            'task': "qx_base.qx_user.tasks.UserAccessTimeTask",
+            'schedule': crontab(hour=23, minute=59, day_of_week="*"),
+        }
+    }
+
+
 ### Mac OS:
 
 gmp:

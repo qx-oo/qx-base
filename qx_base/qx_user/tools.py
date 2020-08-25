@@ -12,12 +12,12 @@ class AccessTimeMixin():
     def __init__(self):
         self.client = RedisClient().get_conn()
         self.model = get_user_model()
-        self.field = 'user'
+        self.field = 'id'
 
     def save_access_time_to_db(self):
         for page in range(self.total_page):
             key, ts = self.format_key(page)
-            self._save_data_to_db(key, self.model, 'platform_id')
+            self._save_data_to_db(key, self.model, 'id')
 
     def update_access_time(self, filter_id, page_params=0):
         raise NotImplementedError()
@@ -47,12 +47,12 @@ class UserLastAccessTime(AccessTimeMixin):
     def _save_data_to_db(self, key, model, filter_field):
         for item in self.client.zrevrange(key, 0, -1, withscores=True):
             object_id = item[0]
-            last_updated = timezone.datetime.fromtimestamp(
+            last_access_time = timezone.datetime.fromtimestamp(
                 item[1], tz=timezone.utc)
             model.objects.filter(
                 **{
                     filter_field: object_id}
-            ).update(last_updated=last_updated)
+            ).update(last_access_time=last_access_time)
 
 
 class CodeMsg():
