@@ -57,10 +57,12 @@ class SendCodeSerializer(serializers.Serializer):
         elif _type in ['signup', 'signin']:
             mobile = validated_data.pop('mobile', None)
             if mobile and User.objects.filter(mobile=mobile).exists():
-                raise serializers.ValidationError('手机号已注册')
+                raise SerializerFieldError(
+                    '手机号已注册', field='mobile')
             email = validated_data.pop('email', None)
             if email and User.objects.filter(email=email).exists():
-                raise serializers.ValidationError('邮箱已注册')
+                raise SerializerFieldError(
+                    '邮箱已注册', field='email')
         elif _type == 'changepwd':
             mobile = validated_data.pop('mobile', None)
             email = validated_data.pop('email', None)
