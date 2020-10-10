@@ -4,6 +4,9 @@ from rest_framework.permissions import (
 
 
 def action_authenticated(allow_actions=[]):
+    """
+    allow_actions: need auth action views.
+    """
 
     class ViewSetPerm(BasePermission):
 
