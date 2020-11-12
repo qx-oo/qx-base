@@ -26,6 +26,7 @@ class UserManager(BaseUserManager):
             raise ValueError('mobile or email is null')
         user = self.model(mobile=mobile,
                           account=account,
+                          email=email,
                           is_active=True,
                           is_staff=is_staff,
                           is_superuser=is_superuser, **extra_fields)
@@ -40,8 +41,8 @@ class UserManager(BaseUserManager):
 
     def create_superuser(self, account: str, password: str,
                          **extra_fields) -> "QxUser":
-        return self._create_user(account, None, password, True, True,
-                                 **extra_fields)
+        return self._create_user(account, account, account, password, True,
+                                 True, **extra_fields)
 
 
 class QxUser_Meta:
