@@ -1,11 +1,12 @@
 from django.http import Http404
 from rest_framework import viewsets, decorators
 from rest_framework.permissions import (
-    AllowAny, IsAuthenticated, BasePermission,
+    IsAuthenticated,
 )
 from ..settings import base_settings
 from ..qx_rest import mixins
 from ..qx_rest.response import ApiResponse
+from ..qx_rest.permissions import action_authenticated
 from .serializers import (
     User,
     SigninSerializer,
@@ -21,13 +22,6 @@ from .serializers import (
 
 UserInfo = base_settings.USERINFO_MODEL
 UserInfoSerializer = base_settings.USERINFO_SERIALIZER_CLASS
-
-
-class UserPermission(BasePermission):
-    def has_permission(self, request, view):
-        if view.action in ['signin', 'signup', 'send_code', 'account_exists']:
-            return AllowAny().has_permission(request, view)
-        return IsAuthenticated().has_permission(request, view)
 
 
 class UserViewSet(viewsets.GenericViewSet,
@@ -69,7 +63,9 @@ class UserViewSet(viewsets.GenericViewSet,
         账号是否被注册, 参数: account=xxxxx
     '''
     permission_classes = (
-        UserPermission,
+        action_authenticated(
+            ['signin', 'signup', 'send_code', 'account_exists']
+        ),
     )
     queryset = User.objects.all()
 
