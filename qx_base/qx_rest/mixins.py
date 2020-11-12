@@ -138,7 +138,7 @@ class UserCreateModelMixin(CreateModelMixin):
     user_field = "user_id"
 
     def perform_create(self, serializer):
-        serializer.save(**{self.user_field: self.request.user})
+        serializer.save(**{self.user_field: self.request.user.id})
 
 
 class PageListModelMixin(mixins.ListModelMixin,
