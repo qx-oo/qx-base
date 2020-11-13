@@ -1,5 +1,7 @@
 from django.http import Http404
-from rest_framework import mixins
+from django.db.models.query import QuerySet
+from rest_framework import mixins, serializers
+from .serializers import RefSerializer
 from .response import ApiResponse
 from .caches import RestCacheMeta, RestCacheKey
 
@@ -138,7 +140,7 @@ class UserCreateModelMixin(CreateModelMixin):
     user_field = "user_id"
 
     def perform_create(self, serializer):
-        serializer.save(**{self.user_field: self.request.user})
+        serializer.save(**{self.user_field: self.request.user.id})
 
 
 class PageListModelMixin(mixins.ListModelMixin,
@@ -166,20 +168,6 @@ class PageListModelMixin(mixins.ListModelMixin,
         return ApiResponse(data)
 
 
-class UserCreateListMixin(CreateModelMixin):
-    """
-    登录用户创建资源
-    """
-
-    def get_serializer(self, *args, **kwargs):
-        if isinstance(kwargs.get('data', {}), list):
-            kwargs['many'] = True
-        return super().get_serializer(*args, **kwargs)
-
-    def perform_create(self, serializer):
-        serializer.save(user_id=self.request.user.id)
-
-
 class RestCacheNameMixin():
 
     def get_cache_name(self, args=[]):
@@ -187,3 +175,76 @@ class RestCacheNameMixin():
         for arg in args:
             key += ':{}'.format(arg)
         return key
+
+
+class RefViewMixin():
+    """
+    class Test(RefViewMixin,
+               RefCreateModelMixin,
+               RefDestroyModelMixin,
+               ...)
+        ref_queryset = Poll.objects.all()
+        ref_field = "poll"
+        queryset = User.objects.all()
+        ...
+    """
+
+    ref_queryset = None
+    ref_serializer_class = RefSerializer
+    ref_field = None
+
+    def get_ref_field(self):
+        return self.ref_field
+
+    def get_ref_queryset(self):
+        queryset = self.ref_queryset
+        if isinstance(queryset, QuerySet):
+            queryset = queryset.all()
+        return queryset
+
+
+class RefCreateModelMixin():
+
+    def ref_create(self, request, *args, **kwargs):
+        ref_field = self.get_ref_field()
+        queryset = self.get_ref_queryset()
+        # validate
+        serializer = self.ref_serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.data
+        # query ref list
+        queryset = list(queryset.filter(id__in=data['ids']))
+        if not queryset:
+            raise Http404()
+        # set instance ref list
+        instance = self.get_object()
+        getattr(instance, ref_field).add(*queryset)
+        return ApiResponse(data=serializer.data)
+
+
+class RefDestroyModelMixin():
+
+    def ref_destroy(self, request, *args, **kwargs):
+        """
+        Destroy resource ref data
+
+        usage: http://xxx.com/xxx?ids=1,2,3,4, ids required
+        """
+        ref_field = self.get_ref_field()
+        ids = request.query_params.get('ids', '')
+        try:
+            ids = [int(_id) for _id in ids.split(',')]
+        except Exception:
+            raise serializers.ValidationError('ids type error')
+        queryset = self.get_ref_queryset()
+        # validate
+        serializer = self.ref_serializer_class(data={'ids': ids})
+        serializer.is_valid(raise_exception=True)
+        data = serializer.data
+        # query ref list
+        queryset = list(queryset.filter(id__in=data['ids']))
+        if not queryset:
+            raise Http404()
+        instance = self.get_object()
+        getattr(instance, ref_field).remove(*queryset)
+        return ApiResponse(data=serializer.data)

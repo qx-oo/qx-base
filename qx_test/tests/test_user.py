@@ -3,7 +3,8 @@ import json
 import django
 from qx_base.qx_user.viewsets import UserViewSet, UserInfoViewSet
 from qx_base.qx_user.tools import CodeMsg
-from qx_test.user.models import User, Baby
+from qx_test.user.models import User, Baby, TGroup, GPermission
+from qx_test.user.views import TGroupViewset
 
 
 class TestUserModel:
@@ -188,3 +189,46 @@ class TestBaby:
         queryset = Baby.prefetch_type_object(queryset)
         queryset = Baby.load_user(queryset)
         assert hasattr(queryset[0], 'type_object')
+
+
+class TestRefView:
+
+    def setup_class(self):
+        self.url = "/api/tests"
+        self.viewset = TGroupViewset
+
+    @pytest.mark.django_db
+    def test_ref(self, rf, user_data_init, signin_request):
+
+        groups = []
+        perms = []
+        for i in range(5):
+            groups.append(TGroup.objects.create(name=str(i + 1)))
+            perms.append(GPermission.objects.create(name=str(i + 1)))
+
+        g1 = groups[0]
+
+        id_query = {self.viewset.lookup_field: g1.id}
+        url = '{}/tgroup/{}/ref/'.format(self.url, g1.id)
+
+        data = {
+            'ids': [p.id for p in perms[:3]]
+        }
+
+        request = rf.post(
+            url, data=data,
+            content_type='application/json')
+        response = self.viewset.as_view(
+            {'post': 'ref_create'})(request, **id_query)
+        assert response.status_code == 200
+        data = json.loads(response.content)
+        assert data['code'] == 200
+
+        ids = [str(p.id) for p in perms[1:3]]
+        url = '{}?ids={}'.format(url, ','.join(ids))
+        request = rf.delete(url)
+        response = self.viewset.as_view(
+            {'delete': 'ref_destroy'})(request, **id_query)
+
+        g1 = TGroup.objects.get(id=g1.id)
+        assert g1.perms.all()[0].id == perms[0].id

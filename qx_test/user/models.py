@@ -65,3 +65,19 @@ class Post(RestModel, ModelCountMixin):
     class Meta:
         verbose_name = 'Post'
         verbose_name_plural = verbose_name
+
+
+class TGroup(models.Model):
+
+    name = models.CharField(
+        verbose_name="名称", max_length=50)
+    perms = models.ManyToManyField(
+        "user.GPermission", verbose_name="权限")
+
+
+class GPermission(models.Model):
+
+    name = models.CharField(
+        verbose_name="名称", max_length=50)
+    groups = models.ManyToManyField(
+        "user.TGroup", verbose_name="组")

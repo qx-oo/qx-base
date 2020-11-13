@@ -1,8 +1,12 @@
+import logging
 import json
 import datetime
 from rest_framework import serializers
 from rest_framework.utils import humanize_datetime
 from django.utils import timezone
+
+
+logger = logging.getLogger(__name__)
 
 
 def check_json_safey(json_data: json, max_json_length=250, include_fields=None,
@@ -123,3 +127,61 @@ class DateTimeField(serializers.DateTimeField):
 
         humanized_format = humanize_datetime.datetime_formats(input_formats)
         self.fail('invalid', format=humanized_format)
+
+
+class ModelListSerializer(serializers.ListSerializer):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.model = self.child.Meta.model
+
+
+class UserBulkListSerializer(ModelListSerializer):
+    """
+    Bulk create by user own data
+    """
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        instance_list = [
+            self.model(**item, user=user)
+            for item in validated_data]
+        return self.model.objects.bulk_create(instance_list)
+
+
+class UserRefListSerializer(ModelListSerializer):
+    """
+    Many to Many Ref Bulk Create
+
+        class CustomSerializer(serializers.Serializer):
+            ...
+            class Meta:
+                list_serializer_class = UserRefListSerializer
+    """
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        instance_list = []
+        for attrs in validated_data:
+            try:
+                attrs['user'] = user
+                instance_list.append(self.child.create(attrs))
+            except Exception:
+                logger.warning(
+                    "UserRefListSerializer create fail {}".format(attrs))
+        return instance_list
+
+
+def validate_list_int(value):
+    for item in value:
+        if len(value) > 200:
+            raise serializers.ValidationError('over max length 200')
+        if not isinstance(item, int):
+            raise serializers.ValidationError('type error')
+
+
+class RefSerializer(serializers.Serializer):
+
+    ids = serializers.ListField(
+        label="ref ids, max lenght: 200", validators=[
+            validate_list_int],)
