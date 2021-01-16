@@ -54,6 +54,9 @@ settings.py:
         'USERINFO_SERIALIZER_CLASS': "qx_test.user.serializers.UserinfoSerializer",
     }
 
+    # Verify Code Continue
+    VERIFY_CODE_CHECK = False
+
 User models.py:
 
     from django.contrib.auth.models import AbstractBaseUser

@@ -144,9 +144,8 @@ class SignupSerializer(serializers.Serializer):
             account = generate_random_account()
 
         object_id = email or mobile
-        _code = CodeMsg(
-            object_id, _type='signup').get_code()
-        if code != _code:
+        c_ins = CodeMsg(object_id, _type='signup')
+        if not c_ins.verify_code(code):
             raise SerializerFieldError(
                 '验证码错误', field='code')
 
@@ -216,9 +215,8 @@ class SigninSerializer(serializers.Serializer):
                 raise serializers.Serializer('发送类型错误')
             object_id = email or mobile
             c_ins = CodeMsg(object_id, _type='signin')
-            _code = c_ins.get_code()
 
-            if _code != code:
+            if not c_ins.verify_code(code):
                 raise SerializerFieldError(
                     '验证码错误', field='code')
         else:
@@ -240,9 +238,8 @@ class UpdateMobileSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         code = validated_data.pop('code', None)
         mobile = validated_data['mobile']
-        _code = CodeMsg(
-            mobile, _type='default').get_code()
-        if code != _code:
+        c_ins = CodeMsg(mobile, _type='default')
+        if not c_ins.verify_code(code):
             raise SerializerFieldError(
                 '验证码错误', field='code')
         if instance.mobile == instance.account:
@@ -267,8 +264,8 @@ class UpdateEmailSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         code = validated_data.pop('code', None)
         email = validated_data['email']
-        _code = CodeMsg(email, _type='default').get_code()
-        if code != _code:
+        c_ins = CodeMsg(email, _type='default')
+        if not c_ins.verify_code(code):
             raise SerializerFieldError(
                 '验证码错误', field='code')
         if instance.email == instance.account:
