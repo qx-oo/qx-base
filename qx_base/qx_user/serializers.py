@@ -78,9 +78,9 @@ class SendCodeSerializer(serializers.Serializer):
             raise serializers.ValidationError('5分钟后才能再次发送')
         try:
             if email:
-                send_cls().send_msg(email, code)
+                send_cls().send_verify_code(email, code)
             elif mobile:
-                send_cls().send_msg(mobile, code)
+                send_cls().send_verify_code(mobile, code)
         except Exception:
             c_ins.del_code()
         return DictInstance(**validated_data)
