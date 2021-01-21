@@ -4,7 +4,14 @@ import time
 import random
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+from django.conf import settings
 from ..qx_core.storage import RedisClient, RedisExpiredHash
+
+
+try:
+    VERIFY_CODE_CHECK = settings.VERIFY_CODE_CHECK
+except AttributeError:
+    VERIFY_CODE_CHECK = True
 
 
 class AccessTimeMixin():
@@ -86,6 +93,11 @@ class CodeMsg():
 
     def del_code(self):
         return self.cache.hdel(self.key)
+
+    def verify_code(self, code):
+        if VERIFY_CODE_CHECK:
+            return code == self.get_code()
+        return True
 
 
 def generate_random_account(length=16, chars=ascii_lowercase+digits, split=4,

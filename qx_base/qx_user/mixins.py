@@ -1,10 +1,16 @@
 class SendMobileMsgMixin():
 
-    def send_msg(self, mobile, msg):
+    def send_verify_code(self, mobile, code):
+        """
+        Send Verify Code
+        """
         raise NotImplementedError()
 
 
 class SendEmailMsgMixin():
 
-    def send_msg(self, email, msg):
+    def send_verify_code(self, email, code):
+        """
+        Send Verify Code
+        """
         raise NotImplementedError()

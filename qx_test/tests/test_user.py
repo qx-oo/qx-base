@@ -53,7 +53,7 @@ class TestUserViewSet:
         self.url = "/api/tests/"
         self.viewset = UserViewSet
 
-    def test_send_code(self, rf, signin_request):
+    def test_send_verify_code(self, rf, signin_request):
         url = '{}/user/send-code/'.format(self.url)
 
         data = {

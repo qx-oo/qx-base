@@ -1,4 +1,4 @@
--e git://github.com/qx-oo/qx-base.git@1.0.0#egg=qx-base
+-e git://github.com/qx-oo/qx-base.git@master#egg=qx-base
 pytest==5.4.3
 pytest-django==3.9.0
 pytest-mock==3.2.0
