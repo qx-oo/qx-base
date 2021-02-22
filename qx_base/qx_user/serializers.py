@@ -96,7 +96,7 @@ class SignupSerializer(serializers.Serializer):
     password = serializers.CharField(
         label="密码", max_length=50, required=False, write_only=True)
     userinfo = base_settings.USERINFO_SERIALIZER_CLASS(
-        label="用户信息")
+        label="用户信息", required=False)
     token = serializers.SerializerMethodField(
         label="token")
 
@@ -106,9 +106,14 @@ class SignupSerializer(serializers.Serializer):
     def _create_user(self, account, mobile, email, password, userinfo):
         instance = User.objects.create_user(account, mobile, email, password)
         # userinfo
-        serializer = base_settings.USERINFO_SERIALIZER_CLASS(data=userinfo)
+        if userinfo:
+            serializer = base_settings.USERINFO_SERIALIZER_CLASS(
+                data=userinfo, user=instance)
+        else:
+            serializer = base_settings.USERINFO_SERIALIZER_CLASS(
+                user=instance)
         serializer.is_valid(raise_exception=True)
-        serializer.save(user=instance)
+        serializer.save()
         return instance
 
     def _check_user_exists(self, email, mobile, account):
