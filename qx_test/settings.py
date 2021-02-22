@@ -151,8 +151,8 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS':
         'qx_base.qx_rest.paginations.Pagination',  # qx_base
     'DEFAULT_FILTER_BACKENDS': (
-        'rest_framework.filters.OrderingFilter',
-        'rest_framework.filters.SearchFilter',
+        # 'rest_framework.filters.OrderingFilter',
+        # 'rest_framework.filters.SearchFilter',
     ),
     'EXCEPTION_HANDLER': 'qx_base.qx_rest.handlers.rest_exception_handler',  # noqa qx_base
     'PAGE_SIZE': 15,

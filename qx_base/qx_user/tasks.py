@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 class UserAccessTimeTask(Task):
     """
-    更新用户最近访问时间
+    更新用户最近访问时间, 每天24点过后执行
     """
 
     def run(self):

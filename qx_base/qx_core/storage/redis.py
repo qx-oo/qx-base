@@ -1,8 +1,10 @@
-import time
+import typing
 import redis
 import logging
 import json
+import decimal
 from django.conf import settings
+from django.utils import timezone
 from ..tools import Singleton
 
 logger = logging.getLogger(__name__)
@@ -42,7 +44,7 @@ class RedisClient(metaclass=Singleton):
 class RedisExpiredHash():
     """
     使用最多三个hash实现hash中field的清理(冗余超时)
-    每16分钟一次清理
+    每个hash到期时间1分钟
     """
 
     def __init__(self, name, expired=5 * 60):
@@ -50,9 +52,13 @@ class RedisExpiredHash():
         name: hash name
         expired: field expire time
         """
-        if expired > 16 * 60:
+        if expired > 60 * 60 * 1:
             raise ValueError("expired too big")
-        self.current = time.time()
+        self.retval = int(decimal.Decimal(
+            expired / 60).quantize(0, rounding=decimal.ROUND_UP)) * 60
+
+        self.time = timezone.now()
+        self.current = int(self.time.timestamp())
         self.name = name
         self.expired = expired
         self.client = RedisClient().get_conn()
@@ -60,22 +66,28 @@ class RedisExpiredHash():
     def get_key_name(self, tm):
         return "qx_base:expiredhash:{}:{}".format(self.name, tm)
 
-    def get_save_tm(self):
+    def get_cur_hash_name(self):
+        diff = decimal.Decimal(self.current).quantize(
+            0, rounding=decimal.ROUND_UP) % self.retval
+        tm = self.current - int(diff)
+        return tm
+
+    def get_save_tm(self) -> typing.Tuple[str, int]:
         """
         获取存储时间
         """
-        cur_tm = int(self.current / 1000)
-        next_tm = cur_tm + 1
-        if (self.expired + self.current) >= next_tm * 1000:
-            return next_tm, 1000 + 1
+        cur_tm = self.get_cur_hash_name()
+        next_tm = cur_tm + self.retval
+        if (self.expired + cur_tm) >= next_tm:
+            return next_tm, self.retval + 1
         else:
-            return cur_tm, next_tm * 1000 - int(self.current) + 1
+            return cur_tm, next_tm - self.current + 1
 
     def hset(self, key, value):
         """
         设置值
         """
-        expire_tm = int(self.current) + self.expired
+        expire_tm = self.current + self.expired
         val = json.dumps({
             'tm': expire_tm,
             'val': value,
@@ -87,9 +99,9 @@ class RedisExpiredHash():
         self.client.expire(name, timeout)
 
     def _query_name(self):
-        cur_tm = int(self.current / 1000)
-        last_tm = cur_tm - 1
-        next_tm = cur_tm + 1
+        cur_tm, _ = self.get_save_tm()
+        last_tm = cur_tm - self.retval
+        next_tm = cur_tm + self.retval
         for tm in [last_tm, cur_tm, next_tm]:
             name = self.get_key_name(tm)
             yield name
@@ -99,10 +111,7 @@ class RedisExpiredHash():
         获取值
         """
         for name in self._query_name():
-            # TODO:
-            # if data := self.client.hget(name, key):
-            data = self.client.hget(name, key)
-            if data:
+            if data := self.client.hget(name, key):
                 val = json.loads(data)
                 if val['tm'] > self.current:
                     return val['val']
