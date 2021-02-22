@@ -60,7 +60,7 @@ class ApiDetailErrorResponse(JsonResponse):
         results = {
             "code": code,
             "msg": msg,
-            "detail": {
+            "data": {
                 "fields": fields,
             },
         }
