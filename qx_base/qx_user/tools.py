@@ -1,3 +1,4 @@
+import typing
 from string import ascii_lowercase, digits
 from random import choice
 import time
@@ -71,14 +72,11 @@ class CodeMsg():
         self.key = object_id
         self.cache = RedisExpiredHash('codemsg{}'.format(_type))
 
-    def get_new_code(self) -> (bool, str):
+    def get_new_code(self) -> typing.Tuple[bool, str]:
         """
         return: 是否缓存, code
         """
-        # TODO:
-        # if code := self.cache.hget(self.key):
-        code = self.cache.hget(self.key)
-        if code:
+        if code := self.cache.hget(self.key):
             return True, code
         code = random.sample(list(range(10)), 6)
         code = ''.join([str(i) for i in code])

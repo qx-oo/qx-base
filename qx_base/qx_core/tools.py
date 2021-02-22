@@ -15,7 +15,7 @@ class Singleton(type):
         return cls._instances[cls]
 
 
-def param_sort(params: [str, dict], pop_keys=[], _json=False) -> str:
+def param_sort(params: dict, pop_keys=[], _json=False) -> str:
     if isinstance(params, dict):
         query_dict = dict(params)
         new_query_dict = {}
