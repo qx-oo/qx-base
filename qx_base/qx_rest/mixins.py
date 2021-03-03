@@ -37,7 +37,10 @@ class ListModelMixin(mixins.ListModelMixin,
             serializer = self.get_serializer(page, many=True)
             return self.paginator.get_paginated_data(serializer.data)
         else:
-            return self.get_serializer(queryset, many=True).data
+            data = self.get_serializer(queryset, many=True).data
+            return {
+                'results': data,
+            }
 
     def list(self, request, *args, **kwargs):
         data = self._list(request, *args, **kwargs)
