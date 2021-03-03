@@ -5,17 +5,9 @@ from ..qx_rest.exceptions import SerializerFieldError
 from ..qx_core.tools import DictInstance
 from ..settings import base_settings
 from .tools import CodeMsg, generate_random_account
-# from .models import _UserInfo as UserInfo
 
 
 User = get_user_model()
-
-
-# class UserInfoSerializer(serializers.ModelSerializer):
-
-#     class Meta:
-#         model = UserInfo
-#         fields = ('id', 'name',)
 
 
 class SendCodeSerializer(serializers.Serializer):
@@ -106,14 +98,13 @@ class SignupSerializer(serializers.Serializer):
     def _create_user(self, account, mobile, email, password, userinfo):
         instance = User.objects.create_user(account, mobile, email, password)
         # userinfo
+        Userinfo = base_settings.USERINFO_SERIALIZER_CLASS.Meta.model
         if userinfo:
-            serializer = base_settings.USERINFO_SERIALIZER_CLASS(
-                data=userinfo, user=instance)
-        else:
-            serializer = base_settings.USERINFO_SERIALIZER_CLASS(
-                user=instance)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
+            u_serializer = base_settings.USERINFO_SERIALIZER_CLASS(
+                data=userinfo)
+            u_serializer.is_valid(raise_exception=True)
+        _ = Userinfo.objects.get_or_create(
+            user=instance, defaults=userinfo)
         return instance
 
     def _check_user_exists(self, email, mobile, account):
