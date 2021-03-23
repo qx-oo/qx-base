@@ -32,7 +32,12 @@ class ListModelMixin(mixins.ListModelMixin,
     def _list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
 
-        if self.is_paginate:
+        is_paginate = self.cache_config.get(
+            self.action, {}).get('is_paginate', None)
+        if is_paginate is None:
+            is_paginate = self.is_paginate
+
+        if is_paginate:
             page = self.paginate_queryset(queryset)
             serializer = self.get_serializer(page, many=True)
             return self.paginator.get_paginated_data(serializer.data)

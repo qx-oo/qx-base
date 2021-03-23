@@ -143,14 +143,6 @@ class UserInfoViewSet(viewsets.GenericViewSet,
     queryset = UserInfo.objects.all() if UserInfo else None
     serializer_class = UserInfoSerializer
 
-    is_paginate = False
-    cache_list = True
-    cache_onlyuser_by_action = {
-        "list": True,
-    }
-    cache_time_by_action = {
-        'list': 60 * 60 * 24 * 10,
-    }
     cache_config = {
         'list': {
             'by_user': True,
