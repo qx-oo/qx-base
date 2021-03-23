@@ -151,6 +151,13 @@ class UserInfoViewSet(viewsets.GenericViewSet,
     cache_time_by_action = {
         'list': 60 * 60 * 24 * 10,
     }
+    cache_config = {
+        'list': {
+            'detail': False,
+            'by_user': True,
+            'is_paginate': False,
+        },
+    }
 
     def get_queryset(self):
         if self.request.user.is_authenticated:
@@ -160,7 +167,7 @@ class UserInfoViewSet(viewsets.GenericViewSet,
     def list(self, request, *args, **kwargs):
         data = self._list(request, *args, **kwargs)
         if data:
-            data = data[0]
+            data = data['results'][0]
         else:
             raise Http404()
         return ApiResponse(data)
