@@ -177,7 +177,7 @@ class PageListModelMixin(mixins.ListModelMixin,
 class RestCacheNameMixin():
 
     def get_cache_name(self, args=[]):
-        key = RestCacheKey._cache_keys(self)
+        key = RestCacheKey._cache_keys(self, self.action)
         for arg in args:
             key += ':{}'.format(arg)
         return key

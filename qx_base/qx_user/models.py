@@ -73,16 +73,15 @@ class QxUser(PermissionsMixin, AbstractBaseModel):
     created = models.DateTimeField(
         verbose_name='创建时间', default=timezone.now, editable=False)
 
-    REST_CACHE_CLASS = {
+    cache_config = {
         "default": {
             "UserInfoViewSet": {
-                "list_action": [
-                    "list"
+                "actions": [
+                    "list",
                 ],
-                "field_only": True,
-                "field_name": "id"
+                "by_user_field": "user_id"
             }
-        }
+        },
     }
 
     objects = UserManager()
@@ -132,14 +131,13 @@ class QxUserInfo(RestModel):
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, primary_key=True,
         verbose_name="用户")
 
-    REST_CACHE_CLASS = {
+    cache_config = {
         "default": {
             "UserInfoViewSet": {
-                "list_action": [
-                    "list"
+                "actions": [
+                    "list",
                 ],
-                "field_only": True,
-                "field_name": "user_id"
+                "by_user_field": "user_id"
             }
         },
     }

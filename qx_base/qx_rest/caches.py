@@ -31,14 +31,44 @@ class RestCacheKey():
         return True
 
     @staticmethod
+    def clear_cache(key, is_pattern=False) -> bool:
+        if is_pattern:
+            RedisClient().clear_by_pattern(key)
+        else:
+            RedisClient().get_conn().delete(key)
+        return True
+
+    @staticmethod
     def get_chache_key(cls, action: str) -> str:
         return "viewset:{}:{}".format(
             RestCacheKey._get_cls_name(cls), action)
 
     @staticmethod
-    def _cache_keys(cls) -> str:
+    def _cache_keys(cls, action) -> str:
         return "viewset:{}:{}".format(
-            RestCacheKey._get_cls_name(cls), cls.action)
+            RestCacheKey._get_cls_name(cls), action)
+
+    @staticmethod
+    def get_rest_cache_key(cls, action, detail_id=None, user_id=None,
+                           code=None, cfg=None):
+        by_user = cfg.get('by_user')
+        if cfg['detail']:
+            if by_user:
+                key = "{}:{}:{}".format(
+                    RestCacheKey._cache_keys(cls, action), user_id, detail_id)
+            else:
+                key = "{}:{}".format(
+                    RestCacheKey._cache_keys(cls, action), detail_id)
+        else:
+            if by_user:
+                key = "{}:{}".format(
+                    RestCacheKey._cache_keys(cls, action), user_id)
+            else:
+                key = "{}".format(
+                    RestCacheKey._cache_keys(cls, action))
+        if code:
+            key = "{}:{}".format(key, code)
+        return key
 
 
 class RestCacheMeta(type):
@@ -62,8 +92,7 @@ class RestCacheMeta(type):
 
         if hasattr(cls, 'cache_config'):
             cls.cache_config = RestCacheMeta.parse_cache_config(cls)
-            VIEWSET_CACHE_CONFIG[cls.__class__.__name__.lower()
-                                 ] = cls.cache_config
+            VIEWSET_CACHE_CONFIG[args[0].lower()] = cls.cache_config
             cls.get_cache_key = RestCacheMeta.get_cache_key
             cls.get_data_by_redis = RestCacheMeta.get_data_by_redis
             cls.set_data_to_redis = RestCacheMeta.set_data_to_redis
@@ -87,14 +116,17 @@ class RestCacheMeta(type):
         cache_config = {}
         if hasattr(cls, 'cache_config'):
             for action, cfg in cls.cache_config.items():
+                detail_field = None
                 if action == 'list':
                     detail = False
                 elif action == 'retrieve':
                     detail = True
+                    detail_field = cls.lookup_url_kwarg or cls.lookup_field
                 else:
                     detail = getattr(cls, action).detail
 
                 default = RestCacheMeta.get_default_detail_action(detail)
+                default['detail_field'] = detail_field
                 default.update(cfg)
                 if not detail and default['cache_fields'] is None:
                     default['cache_fields'] = RestCacheMeta.get_cache_fields(
@@ -112,6 +144,7 @@ class RestCacheMeta(type):
                 'timeout': (60 * 60 * 24) * 10,
                 'by_user': False,
                 'is_paginate': None,
+                'detail_field': None,
             }
         else:
             return {
@@ -121,6 +154,7 @@ class RestCacheMeta(type):
                 'timeout': (60 * 60 * 24) * 10,
                 'by_user': False,
                 'is_paginate': True,
+                'detail_field': None,
             }
 
     @staticmethod
@@ -190,8 +224,10 @@ class RestCacheMeta(type):
         cfg = self.cache_config.get(self.action)
         if not cfg:
             return None, None
-        by_user = cfg.get('by_user')
+
         code = self.get_query_params_encode(request, cfg)
+        detail_id = None
+        user_id = None
         if cfg['detail']:
             lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
 
@@ -200,22 +236,10 @@ class RestCacheMeta(type):
                 'named "%s". ' %
                 (self.__class__.__name__, lookup_url_kwarg)
             )
+            detail_id = self.kwargs[lookup_url_kwarg]
+        if request.user.is_authenticated:
+            user_id = request.user.id
 
-            obj_id = self.kwargs[lookup_url_kwarg]
-            code = self.get_query_params_encode(request, cfg)
-            if by_user:
-                key = "{}:{}:{}".format(
-                    RestCacheKey._cache_keys(self), request.user.id, obj_id)
-            else:
-                key = "{}:{}".format(
-                    RestCacheKey._cache_keys(self), obj_id)
-        else:
-            if by_user and request.user.is_authenticated:
-                key = "{}:{}".format(
-                    RestCacheKey._cache_keys(self), request.user.id)
-            else:
-                key = "{}".format(
-                    RestCacheKey._cache_keys(self))
-        if code:
-            key = "{}:{}".format(key, code)
-        return key, cfg['timeout']
+        return RestCacheKey.get_rest_cache_key(
+            self, self.action, detail_id=detail_id, user_id=user_id, code=code,
+            cfg=cfg), cfg['timeout']

@@ -1,7 +1,7 @@
 from django.db import models
 from ..qx_core.storage import RedisClient
 from ..qx_core.models import AbstractBaseModel
-from .caches import RestCacheKey
+from .caches import RestCacheKey, VIEWSET_CACHE_CONFIG
 
 # Create your models here.
 
@@ -10,18 +10,14 @@ class RestModelMixin(models.Model):
     '''
     重置model的save和delete方法, 可以同步model的rest接口对应缓存
 
-    REST_CACHE_CLASS = {
+    cache_config = {
         "default": {
-            "cls_name": {
-                "list_action": [
-                    "list",
+            "viewset": {
+                "actions": [
+                    "xxx1",
+                    "xxx2",
                 ],
-                "retrieve_action": [
-                    "retrieve",
-                ],
-                "retrieve_field": "id",
-                "field_only": True,
-                "field_name": "user__baby__name"
+                "by_user_field": "user_id"
             }
         },
         "custom": {
@@ -32,12 +28,9 @@ class RestModelMixin(models.Model):
             ]
         },
         "foreign": {
-            "cls_name": {
-                "list_action": [
-                    "list",
-                ],
-                "retrieve_action": [
-                    "retrieve",
+            "viewset": {
+                "actions": [
+                    "xxx3",
                 ],
                 "foreign_set": "test_set",
                 "foreign_set_func": "xxxx",
@@ -46,11 +39,11 @@ class RestModelMixin(models.Model):
                 "field_name": "user_id" // or baby__user_id
             }
         },
-        "reload_data": False # reload data from db
+        "reload_data": bool, # 是否载入原数据
     }
     '''
 
-    REST_CACHE_CLASS = None
+    cache_config = None
 
     def _get_relate_field(self, ins, only_field_lst: list, index=0):
         """
@@ -63,41 +56,42 @@ class RestModelMixin(models.Model):
         else:
             return getattr(ins, only_field_lst[index])
 
-    def _get_action(self, ins, cls, val: dict):
-        list_action = val.get('list_action', [])
-        retrieve_action = val.get('retrieve_action', [])
-        if val.get("field_only"):
-            only_field_lst = val['field_name'].split("__")
-            _id = str(self._get_relate_field(ins, only_field_lst))
-            list_action = [
-                item + ":" + _id
-                for item in list_action
-            ]
-            retrieve_action = [
-                item + ":" + _id
-                for item in retrieve_action
-            ]
-        return list_action, retrieve_action
-
     def _foreign_clear_cache(self, ins, cls, val: dict):
-        list_action, retrieve_action = self._get_action(ins, cls, val)
-        if val.get('foreign_set'):
-            obj_ids = getattr(self, val['foreign_set']).all().values_list(
-                val.get("retrieve_field", 'id'), flat=True)
-        else:
-            obj_ids = getattr(self, val['foreign_set_func'])()
+        """
+        一对多缓存删除
+        """
+        keys = []
+        objs = getattr(ins, val['foreign_set']).all()
+        for action in val['actions']:
+            cfg = VIEWSET_CACHE_CONFIG.get(cls.lower(), {}).get(action)
+            for obj in objs:
+                detail_id = None
+                user_id = None
+                if cfg['detail']:
+                    only_field_lst = cfg['detail_field'].split("__")
+                    detail_id = str(
+                        self._get_relate_field(obj, only_field_lst))
+                if cfg['by_user']:
+                    only_field_lst = val['by_user_field'].split("__")
+                    user_id = str(
+                        self._get_relate_field(obj, only_field_lst))
+
+                key = RestCacheKey.get_rest_cache_key(
+                    cls, action,
+                    detail_id=detail_id, user_id=user_id, code='', cfg=cfg,
+                )
+                is_pattern = True if cfg['query_params'] else False
+                keys.append((key, is_pattern))
 
         def _func():
-            for item in list_action:
-                RestCacheKey.clear_cache_keys(
-                    cls, item)
-            for item in retrieve_action:
-                for _id in obj_ids:
-                    RestCacheKey.clear_cache_key(
-                        cls, item, _id)
+            for key, is_pattern in keys:
+                RestCacheKey.clear_cache(key, is_pattern)
         return _func
 
     def _custom_clear_cache(self, ins, key, args):
+        """
+        定制缓存删除
+        """
         _args = []
         for arg in args:
             if arg == '*':
@@ -112,55 +106,67 @@ class RestModelMixin(models.Model):
             RedisClient().clear_by_pattern(item)
         return _func
 
-    def _default_clear_cache(self, ins, cls, val: dict):
-        list_action, retrieve_action = self._get_action(ins, cls, val)
-        if retrieve_action:
-            _id = getattr(self, val.get("retrieve_field", 'id'))
-        else:
-            _id = None
+    def _default_clear_cache(self, ins, cls, val):
+        """
+        默认缓存删除
+        """
+        keys = []
+        for action in val['actions']:
+            cfg = VIEWSET_CACHE_CONFIG.get(cls.lower(), {}).get(action)
+            detail_id = None
+            user_id = None
+            if cfg['detail']:
+                only_field_lst = cfg['detail_field'].split("__")
+                detail_id = str(self._get_relate_field(ins, only_field_lst))
+            if cfg['by_user']:
+                only_field_lst = val['by_user_field'].split("__")
+                user_id = str(self._get_relate_field(ins, only_field_lst))
+
+            key = RestCacheKey.get_rest_cache_key(
+                cls, action,
+                detail_id=detail_id, user_id=user_id, code='', cfg=cfg,
+            )
+            is_pattern = True if cfg['query_params'] else False
+            keys.append((key, is_pattern))
 
         def _func():
-            for item in list_action:
-                RestCacheKey.clear_cache_keys(
-                    cls, item)
-            for item in retrieve_action:
-                RestCacheKey.clear_cache_key(
-                    cls, item, _id)
+            for key, is_pattern in keys:
+                RestCacheKey.clear_cache(key, is_pattern)
         return _func
 
     def save(self, force_insert=False, force_update=False, using=None,
              update_fields=None):
 
         objs = [self]
-        if self.REST_CACHE_CLASS:
-            if self.REST_CACHE_CLASS.get('reload_data', False) and self.id:
+        if self.cache_config:
+            if self.cache_config.get('reload_data', False) and self.id:
                 origin = self.__class__.objects.get(id=self.id)
                 objs.append(origin)
 
         super().save(force_insert, force_update, using,
                      update_fields)
 
-        if self.REST_CACHE_CLASS:
+        if self.cache_config:
             for ins in objs:
-                for cls, val in self.REST_CACHE_CLASS.get(
+                for cls, val in self.cache_config.get(
                         'default', {}).items():
                     self._default_clear_cache(ins, cls, val)()
-                for cls, val in self.REST_CACHE_CLASS.get(
+                for cls, val in self.cache_config.get(
                         'foreign', {}).items():
                     self._foreign_clear_cache(ins, cls, val)()
-                for cls, val in self.REST_CACHE_CLASS.get(
+                for cls, args in self.cache_config.get(
                         'custom', {}).items():
-                    self._custom_clear_cache(ins, cls, val)()
+                    self._custom_clear_cache(ins, cls, args)()
 
     def delete(self, using=None, keep_parents=False):
         cache_func = []
-        if self.REST_CACHE_CLASS:
+        if self.cache_config:
             ins = self
-            for cls, val in self.REST_CACHE_CLASS.get('default', {}).items():
+            for cls, val in self.cache_config.get('default', {}).items():
                 cache_func.append(self._default_clear_cache(ins, cls, val))
-            for cls, val in self.REST_CACHE_CLASS.get('foreign', {}).items():
+            for cls, val in self.cache_config.get('foreign', {}).items():
                 self._foreign_clear_cache(ins, cls, val)()
-            for cls, val in self.REST_CACHE_CLASS.get('custom', {}).items():
+            for cls, val in self.cache_config.get('custom', {}).items():
                 cache_func.append(self._custom_clear_cache(ins, cls, val))
         ret = super().delete(using, keep_parents)
         for func in cache_func:

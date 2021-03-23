@@ -33,7 +33,7 @@ class RedisClient(metaclass=Singleton):
         client = self.get_conn()
         cur = '0'
         while True:
-            cur, data = client.scan(cur, key, 50000)
+            cur, data = client.scan(cur, key, 10000)
             for _key in data:
                 client.delete(_key)
             if int(cur) == 0:
