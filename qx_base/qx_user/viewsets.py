@@ -153,7 +153,6 @@ class UserInfoViewSet(viewsets.GenericViewSet,
     }
     cache_config = {
         'list': {
-            'detail': False,
             'by_user': True,
             'is_paginate': False,
         },
