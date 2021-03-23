@@ -47,7 +47,6 @@ class RestCacheMeta(type):
     ---
     cache_config = {
         'action1': {
-            'detail': bool, # 是否detail action
             'query_params': bool, # 是否缓存查询参数
             'cache_fields': ['user', 'name'], # 缓存参数
             # 'by_field': 'user_id', # 通过field缓存
@@ -88,12 +87,18 @@ class RestCacheMeta(type):
         cache_config = {}
         if hasattr(cls, 'cache_config'):
             for action, cfg in cls.cache_config.items():
-                detail = cfg.get('detail', False)
+                if action == 'list':
+                    detail = False
+                elif action == 'retrieve':
+                    detail = True
+                else:
+                    detail = getattr(cls, action).detail
+
                 default = RestCacheMeta.get_default_detail_action(detail)
                 default.update(cfg)
                 if not detail and default['cache_fields'] is None:
                     default['cache_fields'] = RestCacheMeta.get_cache_fields(
-                        cls, cfg['is_paginate'])
+                        cls, default['is_paginate'])
                 cache_config[action] = default
         return cache_config
 
@@ -110,7 +115,7 @@ class RestCacheMeta(type):
             }
         else:
             return {
-                'action_detail': False,
+                'detail': False,
                 'query_params': True,
                 'cache_fields': None,
                 'timeout': (60 * 60 * 24) * 10,
