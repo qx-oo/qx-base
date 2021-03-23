@@ -109,6 +109,8 @@ class RestCacheMeta(type):
             if hasattr(cls, '_list'):
                 cls._default_list = cls._list
                 cls._list = RestCacheMeta._cache_list
+        else:
+            cls.cache_config = {}
         return cls
 
     @staticmethod
