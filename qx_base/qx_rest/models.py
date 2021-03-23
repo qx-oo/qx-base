@@ -63,7 +63,7 @@ class RestModelMixin(models.Model):
         else:
             return getattr(ins, only_field_lst[index])
 
-    def _get_action(self, ins, cls: "class", val: dict):
+    def _get_action(self, ins, cls, val: dict):
         list_action = val.get('list_action', [])
         retrieve_action = val.get('retrieve_action', [])
         if val.get("field_only"):
@@ -79,7 +79,7 @@ class RestModelMixin(models.Model):
             ]
         return list_action, retrieve_action
 
-    def _foreign_clear_cache(self, ins, cls: "class", val: dict):
+    def _foreign_clear_cache(self, ins, cls, val: dict):
         list_action, retrieve_action = self._get_action(ins, cls, val)
         if val.get('foreign_set'):
             obj_ids = getattr(self, val['foreign_set']).all().values_list(
@@ -112,7 +112,7 @@ class RestModelMixin(models.Model):
             RedisClient().clear_by_pattern(item)
         return _func
 
-    def _default_clear_cache(self, ins, cls: "class", val: dict):
+    def _default_clear_cache(self, ins, cls, val: dict):
         list_action, retrieve_action = self._get_action(ins, cls, val)
         if retrieve_action:
             _id = getattr(self, val.get("retrieve_field", 'id'))

@@ -1,5 +1,6 @@
 import logging
 from django.http import JsonResponse
+from ..qx_core.storage.caches import ApiJSONEncoder
 
 
 logger = logging.getLogger(__name__)
@@ -33,13 +34,13 @@ class ApiNotFoundResponse(JsonResponse):
 
 
 class ApiResponse(JsonResponse):
-    def __init__(self, data: dict):
+    def __init__(self, data: dict, encoder=ApiJSONEncoder):
         results = {
             "code": 200,
             "msg": ["success"],
             "data": data
         }
-        super().__init__(data=results, status=200)
+        super().__init__(data=results, encoder=encoder, status=200)
 
 
 class ApiErrorResponse(JsonResponse):
