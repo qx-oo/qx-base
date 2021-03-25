@@ -79,7 +79,8 @@ class QxUser(PermissionsMixin, AbstractBaseModel):
                 "actions": [
                     "list",
                 ],
-                "by_user_field": "user_id"
+                "by_user_field": "user_id",
+                "create": False,
             }
         },
     }
@@ -137,7 +138,8 @@ class QxUserInfo(RestModel):
                 "actions": [
                     "list",
                 ],
-                "by_user_field": "user_id"
+                "by_user_field": "user_id",
+                "create": False,
             }
         },
     }

@@ -3,7 +3,9 @@ from ..qx_core.storage import RedisClient
 from ..qx_core.models import AbstractBaseModel
 from .caches import RestCacheKey, VIEWSET_CACHE_CONFIG
 
-# Create your models here.
+
+def _empty_func():
+    pass
 
 
 class RestModelMixin(models.Model):
@@ -17,15 +19,23 @@ class RestModelMixin(models.Model):
                     "xxx1",
                     "xxx2",
                 ],
-                "by_user_field": "user_id"
+                "by_user_field": "user_id",
+                "create": True,  # 创建是否清理
+                "update": False, # 更新是否清理
+                "delete": True,  # 删除是否清理
             }
         },
         "custom": {
-            "test:test:{}:{}": [
-                'args1',
-                '*',
-                'args2',
-            ]
+            "test:test:{}:{}": {
+                "args": [
+                    'args1',
+                    '*',
+                    'args2',
+                ],
+                "create": True,
+                "update": False,
+                "delete": True,
+            }
         },
         "foreign": {
             "viewset": {
@@ -37,6 +47,9 @@ class RestModelMixin(models.Model):
                 "retrieve_field": "id",
                 "field_only": True,
                 "field_name": "user_id" // or baby__user_id
+                "create": True,
+                "update": False,
+                "delete": True,
             }
         },
         "reload_data": bool, # 是否载入原数据
@@ -44,6 +57,19 @@ class RestModelMixin(models.Model):
     '''
 
     cache_config = None
+
+    def _get_skip_status(self, val, method):
+        skip = False
+        if method == 'create':
+            if not val.get('create', True):
+                skip = True
+        elif method == 'update':
+            if not val.get('update', True):
+                skip = True
+        elif method == 'delete':
+            if not val.get('delete', True):
+                skip = True
+        return skip
 
     def _get_relate_field(self, ins, only_field_lst: list, index=0):
         """
@@ -56,10 +82,12 @@ class RestModelMixin(models.Model):
         else:
             return getattr(ins, only_field_lst[index])
 
-    def _foreign_clear_cache(self, ins, cls, val: dict):
+    def _foreign_clear_cache(self, ins, cls, val: dict, method='create'):
         """
         一对多缓存删除
         """
+        if self._get_skip_status(val, method):
+            return _empty_func
         keys = []
         objs = getattr(ins, val['foreign_set']).all()
         for action in val['actions']:
@@ -88,12 +116,14 @@ class RestModelMixin(models.Model):
                 RestCacheKey.clear_cache(key, is_pattern)
         return _func
 
-    def _custom_clear_cache(self, ins, key, args):
+    def _custom_clear_cache(self, ins, key, val: dict, method='create'):
         """
         定制缓存删除
         """
+        if self._get_skip_status(val, method):
+            return _empty_func
         _args = []
-        for arg in args:
+        for arg in val.get('args'):
             if arg == '*':
                 _args.append('*')
             else:
@@ -106,10 +136,12 @@ class RestModelMixin(models.Model):
             RedisClient().clear_by_pattern(item)
         return _func
 
-    def _default_clear_cache(self, ins, cls, val):
+    def _default_clear_cache(self, ins, cls, val: dict, method='create'):
         """
         默认缓存删除
         """
+        if self._get_skip_status(val, method):
+            return _empty_func
         keys = []
         for action in val['actions']:
             cfg = VIEWSET_CACHE_CONFIG.get(cls.lower(), {}).get(action)
@@ -136,7 +168,7 @@ class RestModelMixin(models.Model):
 
     def save(self, force_insert=False, force_update=False, using=None,
              update_fields=None):
-
+        method = 'create' if self.pk is None else 'update'
         objs = [self]
         if self.cache_config:
             if self.cache_config.get('reload_data', False) and self.id:
@@ -150,24 +182,27 @@ class RestModelMixin(models.Model):
             for ins in objs:
                 for cls, val in self.cache_config.get(
                         'default', {}).items():
-                    self._default_clear_cache(ins, cls, val)()
+                    self._default_clear_cache(ins, cls, val, method)()
                 for cls, val in self.cache_config.get(
                         'foreign', {}).items():
-                    self._foreign_clear_cache(ins, cls, val)()
-                for cls, args in self.cache_config.get(
+                    self._foreign_clear_cache(ins, cls, val, method)()
+                for cls, val in self.cache_config.get(
                         'custom', {}).items():
-                    self._custom_clear_cache(ins, cls, args)()
+                    self._custom_clear_cache(ins, cls, val, method)()
 
     def delete(self, using=None, keep_parents=False):
         cache_func = []
         if self.cache_config:
             ins = self
             for cls, val in self.cache_config.get('default', {}).items():
-                cache_func.append(self._default_clear_cache(ins, cls, val))
+                cache_func.append(self._default_clear_cache(
+                    ins, cls, val, 'delete'))
             for cls, val in self.cache_config.get('foreign', {}).items():
-                self._foreign_clear_cache(ins, cls, val)()
+                self._foreign_clear_cache(
+                    ins, cls, val, 'delete')()
             for cls, val in self.cache_config.get('custom', {}).items():
-                cache_func.append(self._custom_clear_cache(ins, cls, val))
+                cache_func.append(self._custom_clear_cache(
+                    ins, cls, val, 'delete'))
         ret = super().delete(using, keep_parents)
         for func in cache_func:
             func()
