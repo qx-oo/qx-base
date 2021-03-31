@@ -176,8 +176,8 @@ class TestBaby:
         user1 = User.objects.get(account='18866668881')
         user2 = User.objects.get(account='18866668882')
         user3 = User.objects.get(account='18866668883')
-        Baby.objects.create(name='test1', type="user",
-                            object_id=user1.id, user_id=user1.id,)
+        baby = Baby.objects.create(name='test1', type="user",
+                                   object_id=user1.id, user_id=user1.id,)
         Baby.objects.create(name='test2', type="user",
                             object_id=user2.id, user_id=user2.id,)
         Baby.objects.create(name='test3', type="user",
@@ -189,6 +189,8 @@ class TestBaby:
         queryset = Baby.prefetch_type_object(queryset)
         queryset = Baby.load_user(queryset)
         assert hasattr(queryset[0], 'type_object')
+        c_baby = Baby.cache_get(id=baby.id)
+        assert c_baby == baby
 
 
 class TestRefView:

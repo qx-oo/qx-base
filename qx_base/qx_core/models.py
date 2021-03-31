@@ -5,8 +5,6 @@ from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
 from .storage import RedisClient
 
-# Create your models here.
-
 
 def get_model_id(model):
     return ContentType.objects.get_for_model(

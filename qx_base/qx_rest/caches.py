@@ -133,6 +133,8 @@ class RestCacheMeta(type):
                 if not detail and default['cache_fields'] is None:
                     default['cache_fields'] = RestCacheMeta.get_cache_fields(
                         cls, default['is_paginate'])
+                    if not default['cache_fields']:
+                        default['query_params'] = False
                 cache_config[action] = default
         return cache_config
 

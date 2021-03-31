@@ -4,7 +4,7 @@ from qx_base.qx_core.models import (
     ContentTypeRelated, load_set_queryset_object, ModelCountMixin
 )
 from qx_base.qx_user.models import QxUser, QxUser_Meta, QxUserInfo
-from qx_base.qx_rest.models import RestModel
+from qx_base.qx_rest.models import RestModel, CacheModelMixin
 
 
 class User(AbstractBaseUser, QxUser):
@@ -30,7 +30,7 @@ class UserInfo(QxUserInfo):
         verbose_name_plural = verbose_name
 
 
-class Baby(ContentTypeRelated, RestModel):
+class Baby(ContentTypeRelated, RestModel, CacheModelMixin):
 
     type_map_model = {
         "user": "user.User",

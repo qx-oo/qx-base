@@ -25,6 +25,13 @@ class ProxyCache():
         self.ts = ts
         self.convert = convert
 
+    def get_or_cache(self, callback, *args, **kwargs):
+        if (data := self.get()) is not None:
+            return data
+        data = callback(*args, **kwargs)
+        self.set(data)
+        return data
+
     def get(self):
         data = self.client.get(self.key)
         if data:
