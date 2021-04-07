@@ -191,6 +191,14 @@ class TestBaby:
         assert hasattr(queryset[0], 'type_object')
         c_baby = Baby.cache_get(id=baby.id)
         assert c_baby == baby
+        try:
+            c2_baby = Baby.cache_get(id=baby.id, user_id=3)
+        except Baby.DoesNotExist:
+            assert True
+        else:
+            assert False
+        c2_baby = Baby.cache_get(id=baby.id, user_id=2)
+        assert c2_baby == baby
 
 
 class TestRefView:

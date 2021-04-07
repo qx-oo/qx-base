@@ -260,6 +260,10 @@ class CacheModelMixin(models.Model):
         ins = ProxyCache(
             *cls.__cache_key__(**kwargs), convert='pickle'
         ).get_or_cache(cls.objects.get, **kwargs)
+        for key, val in kwargs.items():
+            if key not in cls.objects_cache_fields:
+                if getattr(ins, key) != val:
+                    raise cls.DoesNotExist
         return ins
 
     @classmethod
