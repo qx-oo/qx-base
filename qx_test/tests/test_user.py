@@ -178,6 +178,10 @@ class TestBaby:
         user3 = User.objects.get(account='18866668883')
         baby = Baby.objects.create(name='test1', type="user",
                                    object_id=user1.id, user_id=user1.id,)
+        baby2 = Baby.objects.create(name='test1', type="user",
+                                    object_id=user1.id, user_id=user1.id,)
+        baby3 = Baby.objects.create(name='test2', type="user",
+                                    object_id=user1.id, user_id=user1.id,)
         Baby.objects.create(name='test2', type="user",
                             object_id=user2.id, user_id=user2.id,)
         Baby.objects.create(name='test3', type="user",
@@ -199,6 +203,14 @@ class TestBaby:
             assert False
         c2_baby = Baby.cache_get(id=baby.id, user_id=2)
         assert c2_baby == baby
+        baby3.name = 'test3'
+        baby3.save()
+        assert Baby.cache_get(id=baby3.id).name == baby3.name
+        queryset = Baby.cache_query(user_id=user1.id, name='test1')
+        assert len(queryset) == 2
+        baby2.delete()
+        queryset = Baby.cache_query(user_id=user1.id, name='test1')
+        assert len(queryset) == 1
 
 
 class TestRefView:

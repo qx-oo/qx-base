@@ -36,6 +36,10 @@ class Baby(ContentTypeRelated, RestModel, CacheModelMixin):
         "user": "user.User",
         "test": None,
     }
+    objects_cache_fields = {
+        'object': ['id', ],
+        'query': ['user_id', ],
+    }
 
     name = models.CharField(
         verbose_name="名称", default="",

@@ -59,7 +59,7 @@ class RedisExpiredHash():
         name: hash name
         expired: field expire time
         """
-        if expired > 60 * 60 * 1:
+        if expired > 60 * 60 * 24 * 30:
             raise ValueError("expired too big")
         self.retval = int(decimal.Decimal(
             expired / 60).quantize(0, rounding=decimal.ROUND_UP)) * 60

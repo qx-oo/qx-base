@@ -29,7 +29,8 @@ class ProxyCache():
         if (data := self.get()) is not None:
             return data
         data = callback(*args, **kwargs)
-        self.set(data)
+        if data:
+            self.set(data)
         return data
 
     def get(self):

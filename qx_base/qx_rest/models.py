@@ -221,57 +221,112 @@ class CacheModelMixin(models.Model):
     Model缓存处理, 如果:
         class User(CacheModelMixin):
             ....
-            objects_cache_fields = ['id',]
+            objects_cache_fields = {
+                'object': ['id',],
+                'query': ['user_id',],
+            }
             ....
 
         user.cache_get(id=15)
+        user.cache_query(id=15) # queryset max length 100
     """
 
-    objects_cache_fields = ['id', ]
+    objects_cache_fields = {
+        'object': ['id', ],
+        'query': [],
+    }
 
     def save(self, force_insert=False, force_update=False, using=None,
              update_fields=None):
         super().save(force_insert, force_update, using,
                      update_fields)
         try:
-            kwargs = self.__cache_kwargs__()
-            ProxyCache(
-                *self.__cache_key__(**kwargs), convert='pickle'
-            ).set(self)
+            if self.objects_cache_fields.get('object'):
+                kwargs = self.__cache_kwargs__()
+                ProxyCache(
+                    *self.__cache_key__(**kwargs), convert='pickle'
+                ).set(self)
+            if self.objects_cache_fields.get('query'):
+                q_kwargs = self.__cache_query_kwargs__()
+                ProxyCache(
+                    *self.__cache_query_key__(**q_kwargs), convert='pickle'
+                ).delete()
         except Exception:
             logger.exception('set cache error')
 
     def delete(self, using=None, keep_parents=False):
         try:
             kwargs = self.__cache_kwargs__()
+            q_kwargs = self.__cache_query_kwargs__()
         except Exception:
             logger.exception('set cache error')
         ret = super().delete(using, keep_parents)
         try:
-            ProxyCache(
-                *self.__cache_key__(**kwargs), convert='pickle'
-            ).delete()
+            if self.objects_cache_fields.get('object'):
+                ProxyCache(
+                    *self.__cache_key__(**kwargs), convert='pickle'
+                ).delete()
+            if self.objects_cache_fields.get('query'):
+                ProxyCache(
+                    *self.__cache_query_key__(**q_kwargs), convert='pickle'
+                ).delete()
         except Exception:
             logger.exception('set cache error')
         return ret
 
     @classmethod
     def cache_get(cls, **kwargs):
+        n_kwargs = {
+            key: val
+            for key, val in kwargs.items()
+            if key not in cls.objects_cache_fields.get('object')
+        }
         ins = ProxyCache(
             *cls.__cache_key__(**kwargs), convert='pickle'
         ).get_or_cache(cls.objects.get, **kwargs)
-        for key, val in kwargs.items():
-            if key not in cls.objects_cache_fields:
-                if getattr(ins, key) != val:
-                    raise cls.DoesNotExist
+        for key, val in n_kwargs.items():
+            if getattr(ins, key) != val:
+                raise cls.DoesNotExist
         return ins
+
+    @classmethod
+    def cache_query(cls, **kwargs):
+        """
+        queryset cache
+        """
+        n_kwargs = {
+            key: val
+            for key, val in kwargs.items()
+            if key not in cls.objects_cache_fields.get('query')
+        }
+        proxy = ProxyCache(
+            *cls.__cache_query_key__(**kwargs), convert='pickle'
+        )
+        if (queryset := proxy.get()) is None:
+            queryset = cls.objects.filter(**kwargs)[:100]
+            if queryset:
+                proxy.set(queryset)
+
+        if n_kwargs:
+            filter_queryset = []
+            for ins in queryset:
+                flag = True
+                for key, val in kwargs.items():
+                    if getattr(ins, key) != val:
+                        flag = False
+                        break
+                if flag:
+                    filter_queryset.append(ins)
+            return filter_queryset
+        else:
+            return list(queryset)
 
     @classmethod
     def __cache_key__(cls, **kwargs):
         key = 'qx_base:cache:model:{}:'.format(
             cls.__name__).lower()
         args = []
-        for field in sorted(cls.objects_cache_fields):
+        for field in sorted(cls.objects_cache_fields.get('object')):
             if val := kwargs.get(field):
                 val = str(val)
                 if len(val) > 10:
@@ -281,14 +336,40 @@ class CacheModelMixin(models.Model):
                 raise KeyError('{} get params error {}'.format(
                     cls.__name__, kwargs))
         key = key + ':'.join(args)
-        if len(key) > 50:
+        if len(key) > 100:
+            raise ValueError('key: %s length too long.' % key)
+        return key, 60 * 60 * 24 * 30
+
+    @classmethod
+    def __cache_query_key__(cls, **kwargs):
+        key = 'qx_base:cache:q_model::{}:'.format(
+            cls.__name__).lower()
+        args = []
+        for field in sorted(cls.objects_cache_fields.get('query')):
+            if val := kwargs.get(field):
+                val = str(val)
+                if len(val) > 10:
+                    raise ValueError('%s: %s length too long.' % (field, val))
+                args.append("{}_{}".format(field, val))
+            else:
+                raise KeyError('{} get params error {}'.format(
+                    cls.__name__, kwargs))
+        key = key + ':'.join(args)
+        if len(key) > 100:
             raise ValueError('key: %s length too long.' % key)
         return key, 60 * 60 * 24 * 30
 
     def __cache_kwargs__(self):
         kwargs = {
             field: getattr(self, field)
-            for field in self.objects_cache_fields
+            for field in self.objects_cache_fields.get('object')
+        }
+        return kwargs
+
+    def __cache_query_kwargs__(self):
+        kwargs = {
+            field: getattr(self, field)
+            for field in self.objects_cache_fields.get('query')
         }
         return kwargs
 

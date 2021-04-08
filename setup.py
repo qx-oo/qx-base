@@ -3,7 +3,7 @@ from setuptools import find_packages, setup
 
 setup(
     name='qx-base',
-    version='1.0.10',
+    version='1.0.11',
     author='Shawn',
     author_email='q-x64@live.com',
     url='https://github.com/qx-oo/qx-base/',
@@ -18,6 +18,6 @@ setup(
         'redis >= 3.3',
         'psycopg2 >= 2.8.3',
     ],
-    python_requires='>=3.7',
+    python_requires='>=3.8',
     platforms='any',
 )
