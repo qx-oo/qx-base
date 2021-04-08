@@ -29,13 +29,20 @@ class RedisClient(metaclass=Singleton):
         return redis.Redis(connection_pool=self.pool)
 
     def clear_by_pattern(self, key_pattern: str) -> bool:
-        key = "{}*".format(key_pattern)
+        if not key_pattern.endswith('*'):
+            key = "{}*".format(key_pattern)
+        else:
+            key = key_pattern
         client = self.get_conn()
         cur = '0'
         while True:
-            cur, data = client.scan(cur, key, 10000)
-            for _key in data:
-                client.delete(_key)
+            cur, data = client.scan(cur, key, 50000)
+            if len(data) > 30:
+                for _key in data:
+                    client.delete(_key)
+            else:
+                if data:
+                    client.delete(*data)
             if int(cur) == 0:
                 break
         return True
