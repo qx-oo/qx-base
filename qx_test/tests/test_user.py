@@ -4,7 +4,7 @@ import django
 from qx_base.qx_user.viewsets import UserViewSet, UserInfoViewSet
 from qx_base.qx_user.tools import CodeMsg
 from qx_test.user.models import User, Baby, TGroup, GPermission
-from qx_test.user.views import TGroupViewset
+from qx_test.user.views import TGroupViewset, BabyViewset
 
 
 class TestUserModel:
@@ -254,3 +254,48 @@ class TestRefView:
 
         g1 = TGroup.objects.get(id=g1.id)
         assert g1.perms.all()[0].id == perms[0].id
+
+
+class TestBabyView:
+
+    def setup_class(self):
+        self.url = "/api/tests"
+        self.viewset = BabyViewset
+
+    @pytest.mark.django_db
+    def test_cache(self, rf, user_data_init, signin_request, mocker):
+
+        def mock_run(self, args=[]):
+            return self.run(*args)
+
+        from qx_base.qx_rest.tasks import AsyncClearCacheTask
+        AsyncClearCacheTask.apply_async = mock_run
+
+        user1 = User.objects.get(account='18866668881')
+        baby = Baby.objects.create(name='test1', type="user",
+                                   object_id=user1.id, user_id=user1.id,)
+        _ = Baby.objects.create(name='test2', type="user",
+                                object_id=user1.id, user_id=user1.id,)
+
+        id_query = {self.viewset.lookup_field: baby.id}
+        url = '{}/baby/{}/'.format(self.url, baby.id)
+        # request = rf.get(
+        #     url)
+
+        request = signin_request(url, "get")
+        response = self.viewset.as_view(
+            {'get': 'retrieve'})(request, **id_query)
+        data = json.loads(response.content)
+        baby.name = 'test4'
+        baby.save()
+        response = self.viewset.as_view(
+            {'get': 'retrieve'})(request, **id_query)
+        data = json.loads(response.content)
+        assert data['data']['name'] == 'test4'
+
+        url = '{}/baby/'.format(self.url)
+        request = signin_request(url, "get")
+        response = self.viewset.as_view(
+            {'get': 'list'})(request)
+        data = json.loads(response.content)
+        assert len(data['data']['results']) == 2

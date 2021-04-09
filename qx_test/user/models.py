@@ -40,6 +40,20 @@ class Baby(ContentTypeRelated, RestModel, CacheModelMixin):
         'object': ['id', ],
         'query': ['user_id', ],
     }
+    cache_config = {
+        "default": {
+            "BabyViewset": {
+                "actions": [
+                    "list",
+                    "retrieve",
+                ],
+                'by_user_field': 'user_id',
+                'async_actions': [
+                    "list",
+                ]
+            }
+        },
+    }
 
     name = models.CharField(
         verbose_name="名称", default="",

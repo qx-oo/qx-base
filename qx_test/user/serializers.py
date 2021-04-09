@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import UserInfo
+from .models import UserInfo, Baby
 
 
 class UserinfoSerializer(serializers.ModelSerializer):
@@ -11,3 +11,10 @@ class UserinfoSerializer(serializers.ModelSerializer):
         model = UserInfo
         fields = ('user_id', 'mobile', 'name', 'age',)
         read_only_fields = ('user_id',)
+
+
+class BabySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Baby
+        fields = ('id', 'user_id', 'name',)

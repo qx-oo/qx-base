@@ -99,6 +99,9 @@ Celery:
     }
 
     CELERY_TASK_ROUTES = {
+        # async cache clean
+        "qx_base.qx_rest.tasks.AsyncClearCacheTask": {}
+        # User access time update to db
         "qx_base.qx_user.tasks.UserAccessTimeTask": {}
     }
     CELERY_BEAT_SCHEDULE = {

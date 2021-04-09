@@ -1,6 +1,6 @@
 import logging
 try:
-    from celery.task import Task
+    from celery.app.task import Task
 except ImportError:
     Task = object
 from ..settings import base_settings

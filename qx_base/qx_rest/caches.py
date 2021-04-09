@@ -39,6 +39,11 @@ class RestCacheKey():
         return True
 
     @staticmethod
+    def clear_action_cache(keys) -> bool:
+        for key, is_pattern in keys:
+            RestCacheKey.clear_cache(key, is_pattern)
+
+    @staticmethod
     def get_chache_key(cls, action: str) -> str:
         return "viewset:{}:{}".format(
             RestCacheKey._get_cls_name(cls), action)

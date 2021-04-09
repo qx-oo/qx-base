@@ -1,8 +1,8 @@
 import logging
 from django.db import models
-from ..qx_core.storage import RedisClient
 from ..qx_core.models import AbstractBaseModel
 from .caches import RestCacheKey, VIEWSET_CACHE_CONFIG, ProxyCache
+from .tasks import AsyncClearCacheTask
 
 
 logger = logging.getLogger(__name__)
@@ -15,6 +15,7 @@ def _empty_func():
 class RestModelMixin(models.Model):
     '''
     重置model的save和delete方法, 可以同步model的rest接口对应缓存
+    !async_actions,async需要celery支持
 
     cache_config = {
         "default": {
@@ -27,6 +28,9 @@ class RestModelMixin(models.Model):
                 "create": True,  # 创建是否清理
                 "update": False, # 更新是否清理
                 "delete": True,  # 删除是否清理
+                "async_actions": [  # 是否异步执行
+                    "xxx3",
+                ],
             }
         },
         "custom": {
@@ -39,7 +43,8 @@ class RestModelMixin(models.Model):
                 "create": True,
                 "update": False,
                 "delete": True,
-            }
+                "async": True,
+            },
         },
         "foreign": {
             "viewset": {
@@ -54,6 +59,9 @@ class RestModelMixin(models.Model):
                 "create": True,
                 "update": False,
                 "delete": True,
+                "async_actions": [
+                    "xxx3",
+                ],
             }
         },
         "reload_data": bool, # 是否载入原数据
@@ -93,6 +101,7 @@ class RestModelMixin(models.Model):
         if self._get_skip_status(val, method):
             return _empty_func
         keys = []
+        keys_async = []
         objs = getattr(ins, val['foreign_set']).all()
         for action in val['actions']:
             cfg = VIEWSET_CACHE_CONFIG.get(cls.lower(), {}).get(action)
@@ -113,12 +122,12 @@ class RestModelMixin(models.Model):
                     detail_id=detail_id, user_id=user_id, code='', cfg=cfg,
                 )
                 is_pattern = True if cfg['query_params'] else False
-                keys.append((key, is_pattern))
+                if action in val.get('async_actions', []):
+                    keys_async.append((key, is_pattern))
+                else:
+                    keys.append((key, is_pattern))
 
-        def _func():
-            for key, is_pattern in keys:
-                RestCacheKey.clear_cache(key, is_pattern)
-        return _func
+        return keys, keys_async
 
     def _custom_clear_cache(self, ins, key, val: dict, method='create'):
         """
@@ -127,6 +136,8 @@ class RestModelMixin(models.Model):
         if self._get_skip_status(val, method):
             return _empty_func
         _args = []
+        keys = []
+        keys_async = []
         for arg in val.get('args'):
             if arg == '*':
                 _args.append('*')
@@ -135,10 +146,14 @@ class RestModelMixin(models.Model):
                 _id = str(self._get_relate_field(ins, arg_field_lst))
                 _args.append(_id)
 
-        def _func():
-            item = key.format(*_args)
-            RedisClient().clear_by_pattern(item)
-        return _func
+        key = key.format(*_args)
+        is_pattern = True if '*' in key else False
+        if val.get('async'):
+            keys_async.append((key, is_pattern))
+        else:
+            keys.append((key.format(*_args), is_pattern))
+
+        return keys, keys_async
 
     def _default_clear_cache(self, ins, cls, val: dict, method='create'):
         """
@@ -147,6 +162,7 @@ class RestModelMixin(models.Model):
         if self._get_skip_status(val, method):
             return _empty_func
         keys = []
+        keys_async = []
         for action in val['actions']:
             cfg = VIEWSET_CACHE_CONFIG.get(cls.lower(), {}).get(action)
             detail_id = None
@@ -163,12 +179,12 @@ class RestModelMixin(models.Model):
                 detail_id=detail_id, user_id=user_id, code='', cfg=cfg,
             )
             is_pattern = True if cfg['query_params'] else False
-            keys.append((key, is_pattern))
+            if action in val.get('async_actions', []):
+                keys_async.append((key, is_pattern))
+            else:
+                keys.append((key, is_pattern))
 
-        def _func():
-            for key, is_pattern in keys:
-                RestCacheKey.clear_cache(key, is_pattern)
-        return _func
+        return keys, keys_async
 
     def save(self, force_insert=False, force_update=False, using=None,
              update_fields=None):
@@ -183,33 +199,54 @@ class RestModelMixin(models.Model):
                      update_fields)
 
         if self.cache_config:
+            keys_async = []
             for ins in objs:
                 for cls, val in self.cache_config.get(
                         'default', {}).items():
-                    self._default_clear_cache(ins, cls, val, method)()
+                    _keys, _keys_async = self._default_clear_cache(
+                        ins, cls, val, method)
+                    RestCacheKey.clear_action_cache(_keys)
+                    keys_async.extend(_keys_async)
                 for cls, val in self.cache_config.get(
                         'foreign', {}).items():
-                    self._foreign_clear_cache(ins, cls, val, method)()
+                    _keys, _keys_async = self._foreign_clear_cache(
+                        ins, cls, val, method)
+                    RestCacheKey.clear_action_cache(_keys)
+                    keys_async.extend(_keys_async)
                 for cls, val in self.cache_config.get(
                         'custom', {}).items():
-                    self._custom_clear_cache(ins, cls, val, method)()
+                    _keys, _keys_async = self._custom_clear_cache(
+                        ins, cls, val, method)
+                    RestCacheKey.clear_action_cache(_keys)
+                    keys_async.extend(_keys_async)
+            if keys_async:
+                AsyncClearCacheTask().apply_async(args=[keys_async])
 
     def delete(self, using=None, keep_parents=False):
-        cache_func = []
+        keys = []
+        keys_async = []
         if self.cache_config:
             ins = self
             for cls, val in self.cache_config.get('default', {}).items():
-                cache_func.append(self._default_clear_cache(
-                    ins, cls, val, 'delete'))
+                _keys, _keys_async = self._default_clear_cache(
+                    ins, cls, val, 'delete')
+                keys.extend(_keys)
+                keys_async.extend(_keys_async)
             for cls, val in self.cache_config.get('foreign', {}).items():
-                self._foreign_clear_cache(
-                    ins, cls, val, 'delete')()
+                _keys, _keys_async = self._foreign_clear_cache(
+                    ins, cls, val, 'delete')
+                RestCacheKey.clear_action_cache(_keys)
+                keys_async.extend(_keys_async)
             for cls, val in self.cache_config.get('custom', {}).items():
-                cache_func.append(self._custom_clear_cache(
-                    ins, cls, val, 'delete'))
+                _keys, _keys_async = self._custom_clear_cache(
+                    ins, cls, val, 'delete')
+                keys.extend(_keys)
+                keys_async.extend(_keys_async)
         ret = super().delete(using, keep_parents)
-        for func in cache_func:
-            func()
+        if keys:
+            RestCacheKey.clear_action_cache(keys)
+        if keys_async:
+            AsyncClearCacheTask().apply_async(args=[keys_async])
         return ret
 
     class Meta:
