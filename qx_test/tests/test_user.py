@@ -6,6 +6,15 @@ from qx_base.qx_user.tools import CodeMsg
 from qx_test.user.models import User, Baby, TGroup, GPermission
 from qx_test.user.views import TGroupViewset, BabyViewset
 
+from qx_base.qx_rest.tasks import AsyncClearCacheTask
+
+
+def mock_run(self, args=[]):
+    return self.run(*args)
+
+
+AsyncClearCacheTask.apply_async = mock_run
+
 
 class TestUserModel:
 
@@ -264,12 +273,6 @@ class TestBabyView:
 
     @pytest.mark.django_db
     def test_cache(self, rf, user_data_init, signin_request, mocker):
-
-        def mock_run(self, args=[]):
-            return self.run(*args)
-
-        from qx_base.qx_rest.tasks import AsyncClearCacheTask
-        AsyncClearCacheTask.apply_async = mock_run
 
         user1 = User.objects.get(account='18866668881')
         baby = Baby.objects.create(name='test1', type="user",
