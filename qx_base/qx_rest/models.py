@@ -281,12 +281,12 @@ class CacheModelMixin(models.Model):
             if self.objects_cache_fields.get('object'):
                 kwargs = self.__cache_kwargs__()
                 ProxyCache(
-                    *self.__cache_key__(**kwargs), convert='pickle'
+                    *self.__cache_key__(**kwargs), convert='object'
                 ).set(self)
             if self.objects_cache_fields.get('query'):
                 q_kwargs = self.__cache_query_kwargs__()
                 ProxyCache(
-                    *self.__cache_query_key__(**q_kwargs), convert='pickle'
+                    *self.__cache_query_key__(**q_kwargs), convert='object'
                 ).delete()
         except Exception:
             logger.exception('set cache error')
@@ -301,11 +301,11 @@ class CacheModelMixin(models.Model):
         try:
             if self.objects_cache_fields.get('object'):
                 ProxyCache(
-                    *self.__cache_key__(**kwargs), convert='pickle'
+                    *self.__cache_key__(**kwargs), convert='object'
                 ).delete()
             if self.objects_cache_fields.get('query'):
                 ProxyCache(
-                    *self.__cache_query_key__(**q_kwargs), convert='pickle'
+                    *self.__cache_query_key__(**q_kwargs), convert='object'
                 ).delete()
         except Exception:
             logger.exception('set cache error')
@@ -319,7 +319,7 @@ class CacheModelMixin(models.Model):
             if key not in cls.objects_cache_fields.get('object')
         }
         ins = ProxyCache(
-            *cls.__cache_key__(**kwargs), convert='pickle'
+            *cls.__cache_key__(**kwargs), convert='object'
         ).get_or_cache(cls.objects.get, **kwargs)
         for key, val in n_kwargs.items():
             if getattr(ins, key) != val:
@@ -337,7 +337,7 @@ class CacheModelMixin(models.Model):
             if key not in cls.objects_cache_fields.get('query')
         }
         proxy = ProxyCache(
-            *cls.__cache_query_key__(**kwargs), convert='pickle'
+            *cls.__cache_query_key__(**kwargs), convert='object'
         )
         if (queryset := proxy.get()) is None:
             queryset = cls.objects.filter(**kwargs)[:100]
@@ -360,7 +360,7 @@ class CacheModelMixin(models.Model):
 
     @classmethod
     def __cache_key__(cls, **kwargs):
-        key = 'qx_base:cache:model:{}:'.format(
+        key = 'qx_base:model:object:{}:'.format(
             cls.__name__).lower()
         args = []
         for field in sorted(cls.objects_cache_fields.get('object')):
@@ -379,7 +379,7 @@ class CacheModelMixin(models.Model):
 
     @classmethod
     def __cache_query_key__(cls, **kwargs):
-        key = 'qx_base:cache:q_model::{}:'.format(
+        key = 'qx_base:q_model:object:{}:'.format(
             cls.__name__).lower()
         args = []
         for field in sorted(cls.objects_cache_fields.get('query')):
@@ -394,7 +394,7 @@ class CacheModelMixin(models.Model):
         key = key + ':'.join(args)
         if len(key) > 100:
             raise ValueError('key: %s length too long.' % key)
-        return key, 60 * 60 * 24 * 30
+        return key, 60 * 60 * 24 * 7
 
     def __cache_kwargs__(self):
         kwargs = {

@@ -3,7 +3,6 @@ import logging
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.conf import settings
-from django.core.cache import cache
 from rest_framework_jwt.settings import api_settings
 from rest_framework import exceptions, HTTP_HEADER_ENCODING
 from rest_framework.authentication import (
@@ -13,6 +12,7 @@ from ..qx_rest.exceptions import (
     AuthenticationExpired,
     UserDisabled,
 )
+from ..qx_core.storage.caches import ProxyCache
 from .tools import UserLastAccessTime
 
 
@@ -93,9 +93,10 @@ class JwtAuthentication(BaseAuthentication):
             # TODO: 临时取消超时判断
             # self._verify_expire(userinfo['timestamp'])
             user_id = userinfo['user_id']
-            cache_key, ts = AUTH_TOKEN_CACHE_KEY, 60 * 60 * 24 * 30
-            cache_key = cache_key.format(user_id)
-            user = cache.get(cache_key)
+            proxy = ProxyCache(
+                AUTH_TOKEN_CACHE_KEY, 60 * 60 * 24 * 30,
+                args=[user_id], convert='object')
+            user = proxy.get()
             if user:
                 if request:
                     # 设置用户最近访问时间
@@ -109,7 +110,7 @@ class JwtAuthentication(BaseAuthentication):
             if not user.is_active:
                 raise UserDisabled()
             if user:
-                cache.set(cache_key, user, ts)
+                proxy.set(user)
             return user, key
         except (jwt.DecodeError, TypeError, UnicodeDecodeError,
                 jwt.InvalidAlgorithmError, KeyError):

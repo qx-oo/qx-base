@@ -10,20 +10,10 @@ from ..tools import Singleton
 logger = logging.getLogger(__name__)
 
 
-class RedisClient(metaclass=Singleton):
+class BaseRedisClient():
     '''
     Get redis pool client
     '''
-
-    def __init__(self):
-        logger.debug("RedisClient Init")
-        self.pool = redis.ConnectionPool(
-            host=settings.REDIS_HOST,
-            port=settings.REDIS_PORT,
-            password=settings.REDIS_PASSWORD,
-            decode_responses=True,
-            db=0
-        )
 
     def get_conn(self) -> "redis.Redis":
         return redis.Redis(connection_pool=self.pool)
@@ -46,6 +36,32 @@ class RedisClient(metaclass=Singleton):
             if int(cur) == 0:
                 break
         return True
+
+
+class RedisClient(BaseRedisClient, metaclass=Singleton):
+
+    def __init__(self):
+        logger.debug("RedisClient Init")
+        self.pool = redis.ConnectionPool(
+            host=settings.REDIS_HOST,
+            port=settings.REDIS_PORT,
+            password=settings.REDIS_PASSWORD,
+            decode_responses=True,
+            db=0
+        )
+
+
+class OriginRedisClient(BaseRedisClient, metaclass=Singleton):
+
+    def __init__(self):
+        logger.debug("RedisClient Init")
+        self.pool = redis.ConnectionPool(
+            host=settings.REDIS_HOST,
+            port=settings.REDIS_PORT,
+            password=settings.REDIS_PASSWORD,
+            decode_responses=False,
+            db=0
+        )
 
 
 class RedisExpiredHash():

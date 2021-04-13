@@ -4,7 +4,7 @@ import pickle
 import ast
 from django.core.serializers.json import DjangoJSONEncoder
 from django.utils import timezone
-from .redis import RedisClient
+from .redis import OriginRedisClient
 
 
 class ApiJSONEncoder(DjangoJSONEncoder):
@@ -18,7 +18,14 @@ class ApiJSONEncoder(DjangoJSONEncoder):
 class ProxyCache():
 
     def __init__(self, key, ts, args=[], convert='json'):
-        self.client = RedisClient().get_conn()
+        """
+        Cache Data
+            key: cache key
+            ts: cache time
+            args: cache key params
+            convert: json|pickle|object
+        """
+        self.client = OriginRedisClient().get_conn()
         self.key = key
         if args:
             self.key = self.key.format(*args)
@@ -37,9 +44,11 @@ class ProxyCache():
         data = self.client.get(self.key)
         if data:
             if self.convert == 'json':
-                return json.loads(data)
+                return json.loads(data.decode())
+            elif self.convert == 'object':
+                return pickle.loads(data)
             elif self.convert == 'pickle':
-                data = ast.literal_eval(data)
+                data = ast.literal_eval(data.decode())
                 return pickle.loads(data)
             else:
                 raise NotImplementedError
@@ -50,6 +59,8 @@ class ProxyCache():
             return
         if self.convert == 'json':
             data = json.dumps(data, cls=ApiJSONEncoder)
+        elif self.convert == 'object':
+            data = pickle.dumps(data)
         elif self.convert == 'pickle':
             data = str(pickle.dumps(data))
         else:
@@ -63,5 +74,5 @@ class ProxyCache():
         self.client.delete(self.key)
 
     def delete_keys(self):
-        RedisClient().clear_by_pattern(self.key)
+        self.client.clear_by_pattern(self.key)
         return True
