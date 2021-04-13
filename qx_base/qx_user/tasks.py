@@ -1,8 +1,5 @@
 import logging
-try:
-    from celery.app.task import Task
-except ImportError:
-    Task = object
+from qx_base.qx_core.tasks import Task
 from ..settings import base_settings
 
 logger = logging.getLogger(__name__)
