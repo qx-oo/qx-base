@@ -19,6 +19,14 @@ class ApiError(exceptions.APIException):
         return self.detail
 
 
+class ApiParamsError(exceptions.APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    api_code = 4000
+
+    def __init__(self, detail: str):
+        self.detail = detail
+
+
 class AuthenticationExpired(exceptions.APIException):
     status_code = status.HTTP_403_FORBIDDEN
     default_detail = 'Token过期'
