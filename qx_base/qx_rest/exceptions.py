@@ -49,3 +49,10 @@ class SerializerFieldError(exceptions.APIException):
     def __init__(self, detail=None, code=None, field=None):
         super().__init__(detail, code)
         self.field = field
+
+
+class UserForbiden(exceptions.APIException):
+    status_code = status.HTTP_403_FORBIDDEN
+    default_detail = '用户没有操作权限'
+    default_code = 'perm_forbiden'
+    api_code = 4013
