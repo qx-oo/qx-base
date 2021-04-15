@@ -8,7 +8,6 @@ from django.contrib.auth.models import (
 )
 from ..qx_core.models import AbstractBaseModel
 from ..qx_rest.models import RestModel
-from ..settings import base_settings
 from .auth import UserJWT
 
 
@@ -44,7 +43,8 @@ class UserManager(BaseUserManager):
                          **extra_fields) -> "QxUser":
         user = self._create_user(account, account, account, password, True,
                                  True, **extra_fields)
-        Userinfo = base_settings.USERINFO_SERIALIZER_CLASS.Meta.model
+        from ..settings import base_settings
+        Userinfo = base_settings.USERINFO_MODEL
         _ = Userinfo.objects.get_or_create(
             user=user,)
         return user
