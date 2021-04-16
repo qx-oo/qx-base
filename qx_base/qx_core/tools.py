@@ -63,6 +63,20 @@ def enforce_timezone(value):
     return timezone.make_aware(value, field_timezone)
 
 
+def convert_week(yearweek, day=1):
+    """
+    Convert week to date
+        week: 201001, 2010 year first week
+    """
+    year = int(str(yearweek)[:4])
+    week = int(str(yearweek)[4:])
+    first = timezone.datetime(int(year), 1, 1).date()
+    base = 1 if first.isocalendar()[1] == 1 else 8
+    date = first + timezone.timedelta(
+        days=base - first.isocalendar()[2] + 7 * (int(week) - 1))
+    return date + timezone.timedelta(days=day - 1)
+
+
 class DictInstance(object):
     def __init__(self, **entries):
         self.__dict__.update(entries)
