@@ -1,9 +1,19 @@
 from django.http import Http404
 from django.db.models.query import QuerySet
-from rest_framework import mixins, serializers
+from rest_framework import mixins, serializers, viewsets
 from .serializers import RefSerializer
 from .response import ApiResponse
 from .caches import RestCacheMeta, RestCacheKey
+
+
+class CacheViewSet(viewsets.GenericViewSet):
+
+    def get_object(self, reload=False):
+        if not reload and hasattr(self, '__c_viewset_object__'):
+            return self.__c_viewset_object__
+        ins = super().get_object()
+        setattr(self, '__c_viewset_object__', ins)
+        return ins
 
 
 class RetrieveModelMixin(mixins.RetrieveModelMixin,
