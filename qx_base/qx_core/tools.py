@@ -5,6 +5,9 @@ from collections import OrderedDict
 from django.utils import timezone
 
 
+tz = timezone.get_default_timezone()
+
+
 class Singleton(type):
     _instances = {}
 
@@ -75,6 +78,17 @@ def convert_week(yearweek, day=1):
     date = first + timezone.timedelta(
         days=base - first.isocalendar()[2] + 7 * (int(week) - 1))
     return date + timezone.timedelta(days=day - 1)
+
+
+def convert_week_daterange(yearweek):
+    """
+    Convert week to date range
+    """
+    date = convert_week(yearweek)
+    start = tz.localize(timezone.datetime.combine(
+        date, timezone.datetime.min.time()))
+    stop = start + timezone.timedelta(days=7)
+    return start, stop
 
 
 class DictInstance(object):
