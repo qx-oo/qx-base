@@ -22,3 +22,9 @@ class WeekFilter(Filter):
             '{}__date__lte'.format(self.field_name): stop,
         }
         return qs.filter(**kwargs).distinct()
+
+
+class EmptyFilter(Filter):
+
+    def filter(self, qs, value):
+        return qs
