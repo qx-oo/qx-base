@@ -59,11 +59,17 @@ def get_ios8601_time(value):
 
 
 def enforce_timezone(value):
-    field_timezone = timezone.get_current_timezone()
-
     if timezone.is_aware(value):
-        return value.astimezone(field_timezone)
-    return timezone.make_aware(value, field_timezone)
+        return value.astimezone(tz)
+    return timezone.make_aware(value, tz)
+
+
+def convert_date_localzerotime(date):
+    """
+    Convert date to local zero time
+    """
+    return tz.localize(timezone.datetime.combine(
+        date, timezone.datetime.min.time()))
 
 
 def convert_week(yearweek, day=1):
@@ -85,8 +91,7 @@ def convert_week_daterange(yearweek):
     Convert week to date range
     """
     date = convert_week(yearweek)
-    start = tz.localize(timezone.datetime.combine(
-        date, timezone.datetime.min.time()))
+    start = convert_date_localzerotime(date)
     stop = start + timezone.timedelta(days=7)
     return start, stop
 
