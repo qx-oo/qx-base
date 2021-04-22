@@ -3,8 +3,18 @@ try:
 except ImportError:
     Filter = object
 from django.utils import timezone
+from rest_framework import filters
 from ..qx_core.tools import convert_week
 from .exceptions import ApiParamsError
+
+
+class OrderingFilter(filters.OrderingFilter):
+
+    def get_schema_fields(self, view):
+        if hasattr(view, 'ordering_fields'):
+            self.ordering_description = "Fields for sorting: " + \
+                ', '.join(view.ordering_fields)
+        return super().get_schema_fields(view)
 
 
 class WeekFilter(Filter):
