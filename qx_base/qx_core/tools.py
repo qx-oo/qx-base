@@ -88,11 +88,10 @@ def convert_week(yearweek, day=1):
 
 def convert_week_daterange(yearweek):
     """
-    Convert week to time range
+    Convert week to date range
     """
-    date = convert_week(yearweek)
-    start = convert_date_localzerotime(date)
-    stop = start + timezone.timedelta(days=7)
+    start = convert_week(yearweek)
+    stop = start + timezone.timedelta(days=6)
     return start, stop
 
 

@@ -2,9 +2,8 @@ try:
     from django_filters import Filter
 except ImportError:
     Filter = object
-from django.utils import timezone
 from rest_framework import filters
-from ..qx_core.tools import convert_week
+from ..qx_core.tools import convert_week_daterange
 from .exceptions import ApiParamsError
 
 
@@ -23,10 +22,9 @@ class WeekFilter(Filter):
         if not value:
             return qs
         try:
-            start = convert_week(value)
+            start, stop = convert_week_daterange(value)
         except Exception:
             raise ApiParamsError('week error')
-        stop = start + timezone.timedelta(days=6)
         kwargs = {
             '{}__date__gte'.format(self.field_name): start,
             '{}__date__lte'.format(self.field_name): stop,
