@@ -88,7 +88,7 @@ def convert_week(yearweek, day=1):
 
 def convert_week_daterange(yearweek):
     """
-    Convert week to date range
+    Convert week to time range
     """
     date = convert_week(yearweek)
     start = convert_date_localzerotime(date)
