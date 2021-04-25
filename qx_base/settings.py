@@ -43,6 +43,7 @@ QX_BASE_SETTINGS = {
     'USERLASTACCESS_CLASS': "qx_base.qx_user.tools.UserLastAccessTime",
     'USERINFO_MODEL': None,
     'USERINFO_SERIALIZER_CLASS': None,
+    'JWT_EXPIRED_DAYS': None,
 }
 
 base_settings = get_settings('QX_BASE_SETTINGS', QX_BASE_SETTINGS)

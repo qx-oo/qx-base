@@ -15,6 +15,7 @@ from .serializers import (
     UpdateMobileSerializer,
     UpdateEmailSerializer,
     AccountExistSerializer,
+    RefreshTokenSerializer,
 )
 
 # Create your views here.
@@ -57,6 +58,11 @@ class UserViewSet(viewsets.GenericViewSet,
 
         更新邮箱
 
+    refresh_token:
+        刷新token
+
+        刷新token
+
     account_exists:
         账号是否被注册
 
@@ -82,6 +88,8 @@ class UserViewSet(viewsets.GenericViewSet,
             return UpdateEmailSerializer
         elif self.action == 'account_exists':
             return AccountExistSerializer
+        elif self.action == 'refresh_token':
+            return RefreshTokenSerializer
         return {}
 
     @decorators.action(methods=['post'], url_path='signup', detail=False)
@@ -104,6 +112,12 @@ class UserViewSet(viewsets.GenericViewSet,
 
     @decorators.action(methods=['put'], url_path='update-email', detail=False)
     def update_email(self, request, *args, **kwargs):
+        instance = request.user
+        return ApiResponse(data=self._update(
+            request, instance, *args, **kwargs))
+
+    @decorators.action(methods=['put'], url_path='refresh-token', detail=False)
+    def refresh_token(self, request, *args, **kwargs):
         instance = request.user
         return ApiResponse(data=self._update(
             request, instance, *args, **kwargs))

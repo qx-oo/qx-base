@@ -143,6 +143,20 @@ class TestUserViewSet:
         data = json.loads(response.content)
         assert data['data']['exists']
 
+    @pytest.mark.django_db
+    def test_refresh_token(self, user_data_init, signin_request):
+
+        url = '{}/user/refresh-token/'.format(self.url)
+
+        data = {}
+
+        request = signin_request(url, "put", data=data)
+        breakpoint()
+        response = self.viewset.as_view({'put': 'refresh_token'})(request)
+        assert response.status_code == 200
+        data = json.loads(response.content)
+        assert data['code'] == 200
+
 
 class TestUserInfoViewSet:
 

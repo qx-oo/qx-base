@@ -196,4 +196,5 @@ QX_BASE_SETTINGS = {
     'SEND_EMAIL_MSG_CLASS': "qx_test.msg.TestMsg",
     'USERINFO_MODEL': "user.UserInfo",
     'USERINFO_SERIALIZER_CLASS': "qx_test.user.serializers.UserinfoSerializer",  # noqa
+    'JWT_EXPIRED_DAYS': 90,
 }

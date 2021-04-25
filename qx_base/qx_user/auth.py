@@ -81,7 +81,9 @@ class JwtAuthentication(BaseAuthentication):
 
     def _verify_expire(self, timestamp):
         created = timezone.datetime.fromtimestamp(timestamp, tz=timezone.utc)
-        if (timezone.now() - timezone.timedelta(days=30)) > created:
+        if (timezone.now() - timezone.timedelta(
+                days=settings.QX_BASE_SETTINGS.get('JWT_EXPIRED_DAYS', 90)
+        )) > created:
             raise AuthenticationExpired()
 
     def authenticate_credentials(self, key, request=None):
@@ -90,8 +92,7 @@ class JwtAuthentication(BaseAuthentication):
             userinfo = UserJWT.decode(key)
             if not userinfo.get("user_id"):
                 raise exceptions.AuthenticationFailed("认证失败")
-            # TODO: 临时取消超时判断
-            # self._verify_expire(userinfo['timestamp'])
+            self._verify_expire(userinfo['timestamp'])
             user_id = userinfo['user_id']
             proxy = ProxyCache(
                 AUTH_TOKEN_CACHE_KEY, 60 * 60 * 24 * 30,

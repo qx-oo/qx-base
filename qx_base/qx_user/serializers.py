@@ -221,6 +221,22 @@ class SigninSerializer(serializers.Serializer):
         model = User
 
 
+class RefreshTokenSerializer(serializers.ModelSerializer):
+
+    token = serializers.SerializerMethodField(
+        label="token")
+
+    def get_token(self, instance):
+        return instance.get_new_token()
+
+    def update(self, instance, validated_data):
+        return instance
+
+    class Meta:
+        model = User
+        fields = ('token', )
+
+
 class UpdateMobileSerializer(serializers.ModelSerializer):
 
     mobile = serializers.CharField(

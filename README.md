@@ -52,6 +52,7 @@ settings.py:
         'SEND_EMAIL_MSG_CLASS': "qx_test.msg.TestMsg",
         'USERINFO_MODEL': "user.UserInfo",
         'USERINFO_SERIALIZER_CLASS': "qx_test.user.serializers.UserinfoSerializer",
+        'JWT_EXPIRED_DAYS': '60',
     }
 
     # Verify Code Continue
