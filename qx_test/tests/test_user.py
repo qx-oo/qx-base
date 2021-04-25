@@ -151,7 +151,6 @@ class TestUserViewSet:
         data = {}
 
         request = signin_request(url, "put", data=data)
-        breakpoint()
         response = self.viewset.as_view({'put': 'refresh_token'})(request)
         assert response.status_code == 200
         data = json.loads(response.content)
