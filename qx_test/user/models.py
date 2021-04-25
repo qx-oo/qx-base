@@ -30,6 +30,10 @@ class UserInfo(QxUserInfo):
         verbose_name_plural = verbose_name
 
 
+def cache_func(baby):
+    return baby.created.strftime('%Y%m%d')
+
+
 class Baby(ContentTypeRelated, RestModel, CacheModelMixin):
 
     type_map_model = {
@@ -52,6 +56,14 @@ class Baby(ContentTypeRelated, RestModel, CacheModelMixin):
                     "list",
                 ]
             }
+        },
+        "custom": {
+            "BabyViewset:test_action:{}:{}": {
+                "args": [
+                    'id',
+                    cache_func,
+                ],
+            },
         },
     }
 

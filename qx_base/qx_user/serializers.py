@@ -143,13 +143,13 @@ class SignupSerializer(serializers.Serializer):
                 '验证码错误', field='code')
 
         # creaste user
-        instance = self._create_user(
-            account, mobile, email, password, userinfo)
+        with transaction.atomic():
+            instance = self._create_user(
+                account, mobile, email, password, userinfo)
         return instance
 
     def create(self, validated_data):
-        with transaction.atomic():
-            return self.create_user(validated_data)
+        return self.create_user(validated_data)
 
     class Meta:
         model = User

@@ -38,7 +38,7 @@ class RestModelMixin(models.Model):
                 "args": [
                     'args1',
                     '*',
-                    'args2',
+                    func,  # func(instance)
                 ],
                 "create": True,
                 "update": False,
@@ -142,9 +142,12 @@ class RestModelMixin(models.Model):
             if arg == '*':
                 _args.append('*')
             else:
-                arg_field_lst = arg.split("__")
-                _id = str(self._get_relate_field(ins, arg_field_lst))
-                _args.append(_id)
+                if callable(arg):
+                    f_val = arg(ins)
+                else:
+                    arg_field_lst = arg.split("__")
+                    f_val = str(self._get_relate_field(ins, arg_field_lst))
+                _args.append(f_val)
 
         key = key.format(*_args)
         is_pattern = True if '*' in key else False
