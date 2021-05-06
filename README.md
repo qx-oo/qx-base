@@ -113,6 +113,20 @@ Celery:
     }
 
 
+asgi wb auth:
+
+    from qx_base.qx_user.auth import AioJWTAuthMiddlewareStack
+
+    application = ProtocolTypeRouter({
+        "http": get_asgi_application(),
+        "websocket": AioJWTAuthMiddlewareStack(
+            URLRouter(
+                wb_views,
+            )
+        ),
+    })
+
+
 ### Mac OS:
 
 gmp:
