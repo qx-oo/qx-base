@@ -17,6 +17,8 @@ setup(
         'PyCryptodome >= 3.9',
         'redis >= 3.3',
         'psycopg2 >= 2.8.3',
+        'channels >= 3.0.3',
+        'channels-redis >= 3.2.0',
     ],
     python_requires='>=3.8',
     platforms='any',

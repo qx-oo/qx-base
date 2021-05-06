@@ -32,6 +32,29 @@ class ProxyCache():
         self.ts = ts
         self.convert = convert
 
+    @classmethod
+    def loads(cls, data, convert):
+        if convert == 'json':
+            return json.loads(data.decode())
+        elif convert == 'object':
+            return pickle.loads(data)
+        elif convert == 'pickle':
+            data = ast.literal_eval(data.decode())
+            return pickle.loads(data)
+        else:
+            raise NotImplementedError
+
+    @classmethod
+    def dumps(cls, data, convert):
+        if convert == 'json':
+            return json.dumps(data, cls=ApiJSONEncoder)
+        elif convert == 'object':
+            return pickle.dumps(data)
+        elif convert == 'pickle':
+            return str(pickle.dumps(data))
+        else:
+            raise NotImplementedError
+
     def get_or_cache(self, callback, *args, **kwargs):
         if (data := self.get()) is not None:
             return data
@@ -43,28 +66,13 @@ class ProxyCache():
     def get(self):
         data = self.client.get(self.key)
         if data:
-            if self.convert == 'json':
-                return json.loads(data.decode())
-            elif self.convert == 'object':
-                return pickle.loads(data)
-            elif self.convert == 'pickle':
-                data = ast.literal_eval(data.decode())
-                return pickle.loads(data)
-            else:
-                raise NotImplementedError
+            return self.loads(data, self.convert)
         return data
 
     def set(self, data):
         if data is None:
             return
-        if self.convert == 'json':
-            data = json.dumps(data, cls=ApiJSONEncoder)
-        elif self.convert == 'object':
-            data = pickle.dumps(data)
-        elif self.convert == 'pickle':
-            data = str(pickle.dumps(data))
-        else:
-            raise NotImplementedError
+        data = self.dumps(data, self.convert)
         if self.ts:
             self.client.set(self.key, data, self.ts)
         else:

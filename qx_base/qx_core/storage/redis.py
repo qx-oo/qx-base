@@ -1,11 +1,12 @@
 import typing
 import redis
+import aioredis
 import logging
 import json
 import decimal
 from django.conf import settings
 from django.utils import timezone
-from ..tools import Singleton
+from ..tools import Singleton, AioSingleton
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +63,44 @@ class OriginRedisClient(BaseRedisClient, metaclass=Singleton):
             decode_responses=False,
             db=0
         )
+
+
+class OriginAioRedisClient(metaclass=AioSingleton):
+    '''
+    Get aio redis pool client
+    '''
+
+    async def __init__(self):
+        logger.debug("AioRedisClient Init")
+        self.redis = await aioredis.create_redis_pool(
+            'redis://:{password}@{host}:{port}/{db}'.format(
+                host=settings.REDIS_HOST,
+                port=settings.REDIS_PORT,
+                password=settings.REDIS_PASSWORD,
+                db=0
+            ))
+
+    def get_conn(self) -> "redis.Redis":
+        return self.redis
+
+    async def clear_by_pattern(self, key_pattern: str) -> bool:
+        if not key_pattern.endswith('*'):
+            key = "{}*".format(key_pattern)
+        else:
+            key = key_pattern
+        client = self.get_conn()
+        cur = '0'
+        while True:
+            cur, data = await client.scan(cur, key, 50000)
+            if len(data) > 30:
+                for _key in data:
+                    await client.delete(_key)
+            else:
+                if data:
+                    await client.delete(*data)
+            if int(cur) == 0:
+                break
+        return True
 
 
 class RedisExpiredHash():
