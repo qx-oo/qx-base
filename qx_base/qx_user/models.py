@@ -104,6 +104,18 @@ class QxUser(PermissionsMixin, AbstractBaseModel):
             "timestamp": int(time.time()),
         }
 
+    def get_simple_userinfo(self):
+        return {
+            "id": self.id,
+            "account": self.account,
+        }
+
+    def get_userinfo(self):
+        return {
+            "id": self.id,
+            "account": self.account,
+        }
+
     def get_new_token(self) -> str:
         token = UserJWT.encode(self)
         return token
