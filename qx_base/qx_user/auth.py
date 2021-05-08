@@ -158,6 +158,8 @@ class AioJWTAuthMiddleware:
                     if user:
                         if not user.is_active:
                             user = AnonymousUser()
+                    else:
+                        user = AnonymousUser()
                     scope['user'] = user
             else:
                 scope['user'] = AnonymousUser()
@@ -172,7 +174,7 @@ class AioJWTAuthMiddleware:
         try:
             return UserModel.objects.get(id=user_id)
         except UserModel.DoesNotExist:
-            return AnonymousUser()
+            return None
 
 
 def AioJWTAuthMiddlewareStack(app):
