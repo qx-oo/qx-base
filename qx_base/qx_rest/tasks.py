@@ -1,19 +1,15 @@
 import logging
-try:
-    from celery.app.task import Task
-except ImportError:
-    Task = object
+from celery import shared_task
 from .caches import RestCacheKey
 
 logger = logging.getLogger(__name__)
 
 
-class AsyncClearCacheTask(Task):
+@shared_task
+def async_clear_cache_task(keys):
     """
     异步删除缓存
     """
-
-    def run(self, keys):
-        if keys:
-            RestCacheKey.clear_action_cache(keys)
-        return True
+    if keys:
+        RestCacheKey.clear_action_cache(keys)
+    return True

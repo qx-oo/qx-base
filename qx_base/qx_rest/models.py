@@ -2,7 +2,7 @@ import logging
 from django.db import models
 from ..qx_core.models import AbstractBaseModel
 from .caches import RestCacheKey, VIEWSET_CACHE_CONFIG, ProxyCache
-from .tasks import AsyncClearCacheTask
+from .tasks import async_clear_cache_task
 
 
 logger = logging.getLogger(__name__)
@@ -223,7 +223,7 @@ class RestModelMixin(models.Model):
                     RestCacheKey.clear_action_cache(_keys)
                     keys_async.extend(_keys_async)
             if keys_async:
-                AsyncClearCacheTask().apply_async(args=[keys_async])
+                async_clear_cache_task.apply_async(args=[keys_async])
 
     def delete(self, using=None, keep_parents=False):
         keys = []
@@ -249,7 +249,7 @@ class RestModelMixin(models.Model):
         if keys:
             RestCacheKey.clear_action_cache(keys)
         if keys_async:
-            AsyncClearCacheTask().apply_async(args=[keys_async])
+            async_clear_cache_task.apply_async(args=[keys_async])
         return ret
 
     class Meta:

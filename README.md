@@ -101,13 +101,13 @@ Celery:
 
     CELERY_TASK_ROUTES = {
         # async cache clean
-        "qx_base.qx_rest.tasks.AsyncClearCacheTask": {}
+        "qx_base.qx_rest.tasks.async_clear_cache_task": {}
         # User access time update to db
-        "qx_base.qx_user.tasks.UserAccessTimeTask": {}
+        "qx_base.qx_user.tasks.user_accesstime_task": {}
     }
     CELERY_BEAT_SCHEDULE = {
-        'UserAccessTimeTask': {
-            'task': "qx_base.qx_user.tasks.UserAccessTimeTask",
+        'user_accesstime_task': {
+            'task': "qx_base.qx_user.tasks.user_accesstime_task",
             'schedule': crontab(hour=23, minute=59, day_of_week="*"),
         }
     }

@@ -6,14 +6,14 @@ from qx_base.qx_user.tools import CodeMsg
 from qx_test.user.models import User, Baby, TGroup, GPermission
 from qx_test.user.views import TGroupViewset, BabyViewset
 
-from qx_base.qx_rest.tasks import AsyncClearCacheTask
+from qx_base.qx_rest.tasks import async_clear_cache_task
 
 
-def mock_run(self, args=[]):
-    return self.run(*args)
+def mock_run(args=[]):
+    return async_clear_cache_task(*args)
 
 
-AsyncClearCacheTask.apply_async = mock_run
+async_clear_cache_task.apply_async = mock_run
 
 
 class TestUserModel:
