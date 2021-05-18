@@ -315,7 +315,7 @@ class CacheModelMixin(models.Model):
         return ret
 
     @classmethod
-    def cache_get(cls, **kwargs):
+    def cache_get(cls, _validate=True, **kwargs):
         n_kwargs = {
             key: val
             for key, val in kwargs.items()
@@ -324,9 +324,10 @@ class CacheModelMixin(models.Model):
         ins = ProxyCache(
             *cls.__cache_key__(**kwargs), convert='object'
         ).get_or_cache(cls.objects.get, **kwargs)
-        for key, val in n_kwargs.items():
-            if getattr(ins, key) != val:
-                raise cls.DoesNotExist
+        if _validate:
+            for key, val in n_kwargs.items():
+                if getattr(ins, key) != val:
+                    raise cls.DoesNotExist
         return ins
 
     @classmethod
